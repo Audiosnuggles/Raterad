@@ -834,14 +834,14 @@ function resetGame() {
   syncAllClients();
 }
 
+app.get("/healthz", (_req, res) => {
+  res.status(200).json({ ok: true });
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-app.get("/healthz", (_req, res) => {
-  res.status(200).json({ ok: true });
 });
 
 io.on("connection", (socket) => {
