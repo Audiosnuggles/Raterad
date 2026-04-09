@@ -1,0 +1,13 @@
+{
+  "name": "raterad-royale",
+  "version": "1.0.0",
+  "description": "90s-style Raterad Royale as a realtime multiplayer browser game with Express and Socket.io",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}
