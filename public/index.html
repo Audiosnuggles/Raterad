@@ -24,6 +24,9 @@
     </style>
 </head>
 <body class="bg-gray-950 text-white font-sans min-h-screen flex flex-col items-center overflow-x-hidden select-none pb-10">
+    <button id="voice-toggle" onclick="toggleVoice()" class="fixed top-4 left-4 z-50 bg-gray-800 border-2 border-cyan-500 text-cyan-300 px-4 py-2 rounded-full text-xs font-bold uppercase hover:bg-gray-700 transition-all shadow-[0_0_10px_rgba(34,211,238,0.3)]">
+        Stimme: AUS
+    </button>
     <button id="bgm-toggle" onclick="toggleBGM()" class="fixed top-4 right-4 z-50 bg-gray-800 border-2 border-pink-500 text-pink-400 px-4 py-2 rounded-full text-xs font-bold uppercase hover:bg-gray-700 transition-all shadow-[0_0_10px_rgba(236,72,153,0.3)] hidden">
         Musik: AUS
     </button>
@@ -93,7 +96,7 @@
                             Testen
                         </button>
                     </div>
-                    <p class="text-xs text-gray-500 mt-2">Tipp: Wähle eine weibliche "Google" oder "Premium" Stimme für bestes Trash-TV Feeling.</p>
+                    <p class="text-xs text-gray-500 mt-2">Tipp: Wähle eine weibliche "Google" oder "Premium" Stimme. Die Moderation startet absichtlich stumm.</p>
                 </div>
 
                 <div id="local-actions" class="space-y-3">
@@ -114,43 +117,47 @@
         </div>
     </div>
 
-    <div id="game-screen" class="hidden flex-col items-center w-full max-w-6xl p-4 md:p-8 fade-transition opacity-0 scale-95">
-        <div class="flex justify-between items-center w-full mb-4">
-            <div id="p1-card" class="bg-blue-900/40 border-2 border-blue-500 rounded-xl p-3 w-40 md:w-56 text-center transition-all duration-300">
+    <div id="game-screen" class="hidden flex-col items-center w-full max-w-7xl p-4 md:p-8 fade-transition opacity-0 scale-95">
+        <div class="w-full grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(320px,520px)_minmax(0,1fr)] items-center gap-4 md:gap-6 mb-6">
+            <div class="flex justify-center md:justify-end">
+            <div id="p1-card" class="bg-blue-900/40 border-2 border-blue-500 rounded-xl p-3 w-full max-w-[260px] text-center transition-all duration-300">
                 <div class="flex justify-between items-center gap-2">
                     <h2 id="p1-name" class="text-blue-300 font-bold truncate">Spieler 1</h2>
                     <span id="p1-badge" class="text-[10px] uppercase tracking-widest bg-blue-500/20 text-blue-200 px-2 py-1 rounded-full">LIVE</span>
                 </div>
                 <p id="p1-score" class="text-2xl md:text-3xl font-extrabold">0 €</p>
             </div>
+            </div>
 
-            <div class="flex flex-col items-center flex-1 px-4 max-w-xl mx-auto hidden md:flex">
-                <div class="flex items-center gap-4 w-full">
+            <div class="hidden md:flex items-center justify-center">
+                <div class="flex items-center gap-4 w-full max-w-[520px] justify-center">
                     <img src="https://api.dicebear.com/7.x/micah/svg?seed=Dietra&backgroundColor=ec4899&mouth=pucker" alt="Moderator" class="w-16 h-16 rounded-full border-2 border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.5)] bg-gray-800">
-                    <div class="bg-gray-800 text-white border border-gray-600 p-3 rounded-2xl rounded-tl-none shadow-xl relative flex-1 speech-bubble">
+                    <div class="bg-gray-800 text-white border border-gray-600 p-3 rounded-2xl rounded-tl-none shadow-xl relative flex-1 speech-bubble min-h-[92px] flex flex-col justify-center">
                         <p id="mod-text" class="text-base font-bold italic leading-tight text-pink-300">"Darling, das Scheinwerferlicht wartet!"</p>
                         <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest font-black">- Klaus-Dietra</p>
                     </div>
                 </div>
             </div>
 
-            <div id="p2-card" class="bg-gray-800 border-2 border-gray-600 rounded-xl p-3 w-40 md:w-56 text-center transition-all duration-300 opacity-50">
+            <div class="flex justify-center md:justify-start">
+            <div id="p2-card" class="bg-gray-800 border-2 border-gray-600 rounded-xl p-3 w-full max-w-[260px] text-center transition-all duration-300 opacity-50">
                 <div class="flex justify-between items-center gap-2">
                     <h2 id="p2-name" class="text-red-300 font-bold truncate">Spieler 2</h2>
                     <span id="p2-badge" class="text-[10px] uppercase tracking-widest bg-red-500/20 text-red-200 px-2 py-1 rounded-full">LIVE</span>
                 </div>
                 <p id="p2-score" class="text-2xl md:text-3xl font-extrabold">0 €</p>
             </div>
+            </div>
         </div>
 
-        <div class="flex md:hidden items-center gap-3 w-full mb-6">
+        <div class="flex md:hidden items-center gap-3 w-full max-w-xl mb-6 justify-center">
             <img src="https://api.dicebear.com/7.x/micah/svg?seed=Dietra&backgroundColor=ec4899&mouth=pucker" alt="Moderator" class="w-12 h-12 rounded-full border-2 border-pink-500 bg-gray-800">
             <div class="bg-gray-800 border border-gray-600 text-pink-300 p-2 rounded-xl rounded-tl-none shadow-xl relative flex-1 text-sm font-bold italic">
                 <p id="mod-text-mobile">"Darling!"</p>
             </div>
         </div>
 
-        <div class="w-full max-w-4xl flex flex-wrap justify-center gap-3 mb-4 text-xs uppercase tracking-[0.25em]">
+        <div class="w-full max-w-4xl flex flex-wrap justify-center gap-3 mb-5 text-xs uppercase tracking-[0.25em]">
             <div class="bg-gray-900 border border-gray-700 px-4 py-2 rounded-full text-cyan-300 font-black">
                 Modus: <span id="mode-display">Lokal</span>
             </div>
@@ -162,7 +169,7 @@
             </div>
         </div>
 
-        <div class="bg-indigo-950 p-4 md:p-6 rounded-xl border-8 border-indigo-900 shadow-[0_0_30px_rgba(49,46,129,0.8)] mb-8 w-full max-w-4xl relative overflow-hidden">
+        <div class="bg-indigo-950 p-4 md:p-6 rounded-xl border-8 border-indigo-900 shadow-[0_0_30px_rgba(49,46,129,0.8)] mb-8 w-full max-w-5xl relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-1/2 bg-white/5 pointer-events-none"></div>
 
             <div class="flex justify-between items-center mb-6">
@@ -173,11 +180,11 @@
                 <div class="w-16"></div>
             </div>
 
-            <div id="board" class="flex flex-wrap justify-center gap-x-6 gap-y-3"></div>
+            <div id="board" class="flex flex-wrap justify-center gap-x-6 gap-y-3 w-full"></div>
         </div>
 
-        <div class="flex flex-col lg:flex-row gap-8 w-full items-center lg:items-start justify-center">
-            <div class="relative w-64 h-64 flex-shrink-0">
+        <div class="w-full grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)] gap-8 items-start justify-items-center">
+            <div class="relative w-64 h-64 md:w-72 md:h-72 flex-shrink-0">
                 <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 z-20">
                     <div class="w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[25px] border-t-pink-500 drop-shadow-md"></div>
                 </div>
@@ -186,7 +193,7 @@
                 </div>
             </div>
 
-            <div class="flex flex-col items-center w-full max-w-2xl relative">
+            <div class="flex flex-col items-center w-full max-w-3xl relative">
                 <div id="action-buttons" class="flex flex-wrap gap-2 md:gap-4 mb-6 w-full justify-center">
                     <button id="btn-spin" onclick="spinWheel()" class="flex-1 min-w-[120px] py-3 bg-gradient-to-r from-indigo-600 to-purple-700 rounded-xl font-bold uppercase hover:scale-105 active:scale-95 transition-all shadow-lg border-2 border-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed">
                         Drehen
@@ -205,7 +212,7 @@
                     </button>
                 </div>
 
-                <div id="keyboard" class="flex flex-wrap justify-center gap-1 md:gap-2"></div>
+                <div id="keyboard" class="flex flex-wrap justify-center gap-1 md:gap-2 w-full max-w-2xl"></div>
             </div>
         </div>
     </div>
@@ -265,6 +272,7 @@
 
         let audioCtx;
         let isBgmPlaying = false;
+        let isVoiceEnabled = false;
         let availableVoices = [];
         let spokenHistory = [];
         let lastWheelSignature = '';
@@ -395,6 +403,22 @@
                 bgMusic.pause();
                 btn.innerText = 'Musik: AUS';
                 btn.classList.remove('bg-pink-900');
+            }
+        }
+
+        function toggleVoice() {
+            const btn = document.getElementById('voice-toggle');
+            isVoiceEnabled = !isVoiceEnabled;
+
+            if (isVoiceEnabled) {
+                btn.innerText = 'Stimme: AN';
+                btn.classList.add('bg-cyan-900');
+            } else {
+                btn.innerText = 'Stimme: AUS';
+                btn.classList.remove('bg-cyan-900');
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                }
             }
         }
 
@@ -553,7 +577,7 @@
             if (desktopEl) desktopEl.innerText = `"${text}"`;
             if (mobileEl) mobileEl.innerText = `"${text}"`;
 
-            if ('speechSynthesis' in window) {
+            if ('speechSynthesis' in window && isVoiceEnabled) {
                 loadVoices();
                 window.speechSynthesis.cancel();
                 const msg = new SpeechSynthesisUtterance(text);
@@ -834,11 +858,11 @@
             const p2Card = document.getElementById('p2-card');
 
             if (gameState.currentPlayer === 0) {
-                p1Card.className = 'bg-blue-600/50 border-2 border-blue-400 rounded-xl p-3 w-40 md:w-56 text-center transform scale-110 shadow-[0_0_20px_rgba(59,130,246,0.6)] z-10 transition-all';
-                p2Card.className = 'bg-gray-800 border-2 border-gray-600 rounded-xl p-3 w-40 md:w-56 text-center opacity-50 transform scale-95 transition-all';
+                p1Card.className = 'bg-blue-600/50 border-2 border-blue-400 rounded-xl p-3 w-full max-w-[260px] text-center transform scale-105 shadow-[0_0_20px_rgba(59,130,246,0.6)] z-10 transition-all';
+                p2Card.className = 'bg-gray-800 border-2 border-gray-600 rounded-xl p-3 w-full max-w-[260px] text-center opacity-50 transform scale-95 transition-all';
             } else {
-                p2Card.className = 'bg-red-600/50 border-2 border-red-400 rounded-xl p-3 w-40 md:w-56 text-center transform scale-110 shadow-[0_0_20px_rgba(239,68,68,0.6)] z-10 transition-all';
-                p1Card.className = 'bg-gray-800 border-2 border-gray-600 rounded-xl p-3 w-40 md:w-56 text-center opacity-50 transform scale-95 transition-all';
+                p2Card.className = 'bg-red-600/50 border-2 border-red-400 rounded-xl p-3 w-full max-w-[260px] text-center transform scale-105 shadow-[0_0_20px_rgba(239,68,68,0.6)] z-10 transition-all';
+                p1Card.className = 'bg-gray-800 border-2 border-gray-600 rounded-xl p-3 w-full max-w-[260px] text-center opacity-50 transform scale-95 transition-all';
             }
         }
 
