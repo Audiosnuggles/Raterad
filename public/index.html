@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TV Raterad Royale - Klaus-Dietra Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .spin-transition { transition: transform 5s cubic-bezier(0.15, 0.85, 0.15, 1); }
+        .fade-transition { transition: opacity 0.5s, transform 0.5s; }
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: -10px;
+            border-width: 0 10px 10px 10px;
+            border-style: solid;
+            border-color: transparent transparent white transparent;
+        }
+        .crt-glow { text-shadow: 0 0 10px rgba(236,72,153,0.8), 0 0 20px rgba(236,72,153,0.5); }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #ec4899; border-radius: 5px; }
+    </style>
+</head>
+<body class="bg-gray-950 text-white font-sans min-h-screen flex flex-col items-center overflow-x-hidden select-none pb-10">
+    <button id="bgm-toggle" onclick="toggleBGM()" class="fixed top-4 right-4 z-50 bg-gray-800 border-2 border-pink-500 text-pink-400 px-4 py-2 rounded-full text-xs font-bold uppercase hover:bg-gray-700 transition-all shadow-[0_0_10px_rgba(236,72,153,0.3)] hidden">
+        Musik: AUS
+    </button>
+
+    <audio id="background-music" loop>
+        <source src="/game-theme.mp3" type="audio/mpeg">
+    </audio>
+
+    <div id="setup-screen" class="z-50 flex flex-col items-center justify-center min-h-screen w-full absolute inset-0 bg-gray-950 fade-transition py-10 overflow-y-auto">
+        <h1 class="text-4xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-orange-500 mb-2 uppercase tracking-widest drop-shadow-lg text-center mt-10">
+            Raterad Royale
+        </h1>
+        <h2 class="text-xl md:text-2xl font-bold text-pink-400 mb-4 uppercase tracking-[0.3em] text-center italic crt-glow">
+            Mit Klaus-Dietra
+        </h2>
+        <div class="text-center mb-6">
+            <p id="session-role" class="text-sm md:text-base font-bold text-cyan-300 uppercase tracking-[0.25em]">Verbinde zur Show...</p>
+            <p id="setup-status" class="text-gray-400 text-sm mt-2 max-w-xl px-6">
+                Wähle deinen Modus: lokal zu zweit, solo gegen CPU oder online mit einem echten Gegenüber.
+            </p>
+            <p id="bootstrap-error" class="hidden text-red-400 text-sm mt-3 max-w-xl px-6 font-bold"></p>
+        </div>
+
+        <div class="bg-gray-900 p-8 rounded-2xl border border-gray-700 shadow-2xl w-full max-w-xl my-4">
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-bold text-pink-400 mb-2">Spielmodus</label>
+                    <select id="mode-select" onchange="handleModeChange()" class="w-full px-4 py-3 rounded-xl bg-gray-800 border-2 border-gray-700 focus:border-pink-500 focus:outline-none text-white">
+                        <option value="local">Lokal: 2 Spieler an einem Gerät</option>
+                        <option value="cpu">Lokal: 1 Spieler gegen CPU</option>
+                        <option value="online">Online: exakt 2 echte Spieler</option>
+                    </select>
+                </div>
+
+                <div id="p1-wrapper">
+                    <label id="p1-label" class="block text-sm font-bold text-blue-400 mb-2">Name Spieler 1</label>
+                    <input type="text" id="p1-input" placeholder="Spieler 1" class="w-full px-4 py-3 rounded-xl bg-gray-800 border-2 border-gray-700 focus:border-blue-500 focus:outline-none text-white">
+                </div>
+
+                <div id="p2-wrapper">
+                    <label id="p2-label" class="block text-sm font-bold text-red-400 mb-2">Name Spieler 2</label>
+                    <input type="text" id="p2-input" placeholder="Spieler 2" class="w-full px-4 py-3 rounded-xl bg-gray-800 border-2 border-gray-700 focus:border-red-500 focus:outline-none text-white">
+                </div>
+
+                <div id="online-slots" class="hidden bg-gray-950/80 border border-gray-700 rounded-2xl p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-pink-400 font-black mb-3">Online-Lobby</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="rounded-xl border border-blue-500/40 bg-blue-950/30 p-3">
+                            <p class="text-xs uppercase tracking-widest text-blue-300">Slot Spieler 1</p>
+                            <p id="slot-player-1" class="text-lg font-black text-white mt-1">Frei</p>
+                        </div>
+                        <div class="rounded-xl border border-red-500/40 bg-red-950/30 p-3">
+                            <p class="text-xs uppercase tracking-widest text-red-300">Slot Spieler 2</p>
+                            <p id="slot-player-2" class="text-lg font-black text-white mt-1">Frei</p>
+                        </div>
+                    </div>
+                    <p id="online-room-info" class="text-xs text-gray-400 mt-3">Maximal 2 Spieler, keine Zuschauer.</p>
+                </div>
+
+                <div class="pt-4 border-t border-gray-700">
+                    <label class="block text-sm font-bold text-pink-400 mb-2">Die Stimme von Klaus-Dietra</label>
+                    <div class="flex gap-2">
+                        <select id="voice-select" class="flex-1 px-4 py-3 rounded-xl bg-gray-800 border-2 border-gray-700 focus:border-pink-500 focus:outline-none text-white text-sm">
+                            <option value="">Lade Stimmen...</option>
+                        </select>
+                        <button onclick="testVoice()" class="px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl text-white font-bold transition-all text-sm border-2 border-gray-600">
+                            Testen
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">Tipp: Wähle eine weibliche "Google" oder "Premium" Stimme für bestes Trash-TV Feeling.</p>
+                </div>
+
+                <div id="local-actions" class="space-y-3">
+                    <button onclick="startConfiguredGame()" class="w-full py-4 bg-gradient-to-r from-pink-600 to-orange-500 hover:scale-[1.02] active:scale-95 rounded-xl text-xl font-black tracking-widest transition-all shadow-[0_0_20px_rgba(236,72,153,0.4)] text-white">
+                        SHOW STARTEN!
+                    </button>
+                </div>
+
+                <div id="online-actions" class="hidden space-y-3">
+                    <button onclick="joinOnlineGame()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-700 hover:scale-[1.02] active:scale-95 rounded-xl text-xl font-black tracking-widest transition-all text-white border-2 border-cyan-300">
+                        Als Spieler beitreten
+                    </button>
+                    <button id="online-start-btn" onclick="startOnlineGame()" class="w-full py-4 bg-gradient-to-r from-pink-600 to-purple-700 hover:scale-[1.02] active:scale-95 rounded-xl text-xl font-black tracking-widest transition-all text-white border-2 border-pink-300 disabled:opacity-40 disabled:cursor-not-allowed">
+                        Online-Show starten
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-screen" class="hidden flex-col items-center w-full max-w-6xl p-4 md:p-8 fade-transition opacity-0 scale-95">
+        <div class="flex justify-between items-center w-full mb-4">
+            <div id="p1-card" class="bg-blue-900/40 border-2 border-blue-500 rounded-xl p-3 w-40 md:w-56 text-center transition-all duration-300">
+                <div class="flex justify-between items-center gap-2">
+                    <h2 id="p1-name" class="text-blue-300 font-bold truncate">Spieler 1</h2>
+                    <span id="p1-badge" class="text-[10px] uppercase tracking-widest bg-blue-500/20 text-blue-200 px-2 py-1 rounded-full">LIVE</span>
+                </div>
+                <p id="p1-score" class="text-2xl md:text-3xl font-extrabold">0 €</p>
+            </div>
+
+            <div class="flex flex-col items-center flex-1 px-4 max-w-xl mx-auto hidden md:flex">
+                <div class="flex items-center gap-4 w-full">
+                    <img src="https://api.dicebear.com/7.x/micah/svg?seed=Dietra&backgroundColor=ec4899&mouth=pucker" alt="Moderator" class="w-16 h-16 rounded-full border-2 border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.5)] bg-gray-800">
+                    <div class="bg-gray-800 text-white border border-gray-600 p-3 rounded-2xl rounded-tl-none shadow-xl relative flex-1 speech-bubble">
+                        <p id="mod-text" class="text-base font-bold italic leading-tight text-pink-300">"Darling, das Scheinwerferlicht wartet!"</p>
+                        <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest font-black">- Klaus-Dietra</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="p2-card" class="bg-gray-800 border-2 border-gray-600 rounded-xl p-3 w-40 md:w-56 text-center transition-all duration-300 opacity-50">
+                <div class="flex justify-between items-center gap-2">
+                    <h2 id="p2-name" class="text-red-300 font-bold truncate">Spieler 2</h2>
+                    <span id="p2-badge" class="text-[10px] uppercase tracking-widest bg-red-500/20 text-red-200 px-2 py-1 rounded-full">LIVE</span>
+                </div>
+                <p id="p2-score" class="text-2xl md:text-3xl font-extrabold">0 €</p>
+            </div>
+        </div>
+
+        <div class="flex md:hidden items-center gap-3 w-full mb-6">
+            <img src="https://api.dicebear.com/7.x/micah/svg?seed=Dietra&backgroundColor=ec4899&mouth=pucker" alt="Moderator" class="w-12 h-12 rounded-full border-2 border-pink-500 bg-gray-800">
+            <div class="bg-gray-800 border border-gray-600 text-pink-300 p-2 rounded-xl rounded-tl-none shadow-xl relative flex-1 text-sm font-bold italic">
+                <p id="mod-text-mobile">"Darling!"</p>
+            </div>
+        </div>
+
+        <div class="w-full max-w-4xl flex flex-wrap justify-center gap-3 mb-4 text-xs uppercase tracking-[0.25em]">
+            <div class="bg-gray-900 border border-gray-700 px-4 py-2 rounded-full text-cyan-300 font-black">
+                Modus: <span id="mode-display">Lokal</span>
+            </div>
+            <div class="bg-gray-900 border border-gray-700 px-4 py-2 rounded-full text-pink-300 font-black">
+                Rolle: <span id="role-display">Nicht beigetreten</span>
+            </div>
+            <div class="bg-gray-900 border border-gray-700 px-4 py-2 rounded-full text-gray-300 font-black">
+                Extra Slots: <span id="live-spectators">0</span>
+            </div>
+        </div>
+
+        <div class="bg-indigo-950 p-4 md:p-6 rounded-xl border-8 border-indigo-900 shadow-[0_0_30px_rgba(49,46,129,0.8)] mb-8 w-full max-w-4xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1/2 bg-white/5 pointer-events-none"></div>
+
+            <div class="flex justify-between items-center mb-6">
+                <div class="text-indigo-400 font-bold">Runde <span id="round-display">1</span> / 3</div>
+                <div id="category-display" class="text-center text-pink-400 font-black tracking-widest uppercase drop-shadow-md text-xl">
+                    KATEGORIE
+                </div>
+                <div class="w-16"></div>
+            </div>
+
+            <div id="board" class="flex flex-wrap justify-center gap-x-6 gap-y-3"></div>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-8 w-full items-center lg:items-start justify-center">
+            <div class="relative w-64 h-64 flex-shrink-0">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 z-20">
+                    <div class="w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[25px] border-t-pink-500 drop-shadow-md"></div>
+                </div>
+                <div class="w-full h-full rounded-full border-4 border-white shadow-[0_0_15px_rgba(255,255,255,0.2)] overflow-hidden relative">
+                    <div id="wheel-container" class="w-full h-full rounded-full origin-center relative spin-transition"></div>
+                </div>
+            </div>
+
+            <div class="flex flex-col items-center w-full max-w-2xl relative">
+                <div id="action-buttons" class="flex flex-wrap gap-2 md:gap-4 mb-6 w-full justify-center">
+                    <button id="btn-spin" onclick="spinWheel()" class="flex-1 min-w-[120px] py-3 bg-gradient-to-r from-indigo-600 to-purple-700 rounded-xl font-bold uppercase hover:scale-105 active:scale-95 transition-all shadow-lg border-2 border-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Drehen
+                    </button>
+                    <button id="btn-vowel" onclick="buyVowelPhase()" class="flex-1 min-w-[120px] py-3 bg-gradient-to-r from-pink-600 to-rose-700 rounded-xl font-bold uppercase hover:scale-105 active:scale-95 transition-all shadow-lg border-2 border-pink-400 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Vokal (250)
+                    </button>
+                    <button id="btn-solve" onclick="openSolveModal()" class="flex-1 min-w-[120px] py-3 bg-gradient-to-r from-amber-500 to-orange-600 rounded-xl font-black text-white uppercase hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(245,158,11,0.5)] border-2 border-amber-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                        LÖSEN!
+                    </button>
+                </div>
+
+                <div id="next-round-container" class="hidden w-full mb-6 text-center">
+                    <button id="next-btn" onclick="openShopPhase()" class="w-full max-w-md mx-auto py-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl font-black text-white text-xl uppercase hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(16,185,129,0.5)] border-2 border-green-300 animate-pulse disabled:opacity-50 disabled:cursor-not-allowed">
+                        Zum Shopping-Bereich!
+                    </button>
+                </div>
+
+                <div id="keyboard" class="flex flex-wrap justify-center gap-1 md:gap-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="shop-screen" class="hidden flex-col items-center w-full min-h-screen p-4 md:p-8 bg-gray-950 absolute inset-0 z-40 fade-transition overflow-y-auto">
+        <h1 class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-500 mb-2 uppercase tracking-widest text-center mt-10 crt-glow" id="shop-title">
+            DER SHOWROOM
+        </h1>
+        <p class="text-gray-400 mb-8 text-center max-w-2xl" id="shop-subtitle">
+            Du hast die Runde gewonnen! Zeit, dein Geld rauszuhauen.
+        </p>
+
+        <div class="bg-gray-900 border-2 border-pink-500 rounded-2xl p-6 mb-8 text-center max-w-md w-full shadow-[0_0_20px_rgba(236,72,153,0.3)]">
+            <h2 class="text-xl text-gray-400 uppercase tracking-widest mb-2" id="buyer-name">Einkäufer</h2>
+            <p class="text-5xl font-black text-green-400" id="buyer-budget">0 €</p>
+            <p class="text-sm text-gray-500 mt-2">Dein verfügbares Budget</p>
+        </div>
+
+        <div id="shop-items" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl w-full mb-12"></div>
+
+        <div class="pb-20 w-full flex justify-center">
+            <button id="shop-continue-btn" onclick="continueAfterShop()" class="px-10 py-4 bg-gradient-to-r from-purple-600 to-pink-600 border-2 border-pink-400 hover:scale-105 active:scale-95 rounded-xl font-black text-xl uppercase tracking-widest transition-all text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                Sparen & Nächste Runde!
+            </button>
+        </div>
+    </div>
+
+    <div id="solve-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex-col items-center justify-center p-4 fade-transition">
+        <div class="bg-gray-900 border-4 border-pink-500 p-8 rounded-3xl max-w-xl w-full text-center shadow-[0_0_50px_rgba(236,72,153,0.3)] relative overflow-hidden">
+            <h2 class="text-3xl font-black text-pink-400 mb-2 uppercase italic tracking-widest">Die Lösung lautet...</h2>
+            <p class="text-gray-400 mb-6 text-sm">Verschreiben kostet dich den Zug, Darling!</p>
+            <input type="text" id="solve-input" class="w-full text-center text-2xl p-4 rounded-xl bg-gray-800 text-white border-b-4 border-pink-500 focus:outline-none uppercase font-bold mb-8" autocomplete="off" spellcheck="false">
+            <div class="flex gap-4">
+                <button onclick="closeSolveModal()" class="flex-1 py-4 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold uppercase transition-all">Abbrechen</button>
+                <button onclick="checkSolution()" class="flex-1 py-4 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl font-black text-white uppercase hover:scale-105 transition-all">Einloggen!</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const vowels = ['A', 'E', 'I', 'O', 'U', 'Ä', 'Ö', 'Ü'];
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ'.split('');
+        let socket = null;
+        let bootstrapError = '';
+
+        let gameState = null;
+        let session = {
+            role: 'waiting',
+            slotIndex: null,
+            canControlAll: false,
+            isHost: false,
+            canConfigure: false,
+            mode: null,
+            roomFull: false
+        };
+
+        let audioCtx;
+        let isBgmPlaying = false;
+        let availableVoices = [];
+        let spokenHistory = [];
+        let lastWheelSignature = '';
+        let lastWheelRotation = 0;
+        let spinTickTimers = [];
+        let voiceRetryTimer = null;
+        let voiceLoadAttempts = 0;
+
+        const modLines = {
+            start: [
+                'Willkommen zur Show, Lieblinge! Klaus-Dietra ist hier, um Träume zu erfüllen.',
+                'Zwei Kandidaten, ein Rad, null Ahnung. Das wird ein Fest, Schätzchen!',
+                'Licht an, Kamera ab! Zeigt mir, was ihr draufhabt, meine Süßen.',
+                'Guten Abend Deutschland! Sind wir bereit für dramatisches Versagen?',
+                'Die Haare sitzen, das Make-up strahlt. Fehlt nur noch ein fähiger Kandidat.',
+                'Ich habe meine Stöckelschuhe an und bin bereit, Punkte zu verteilen!'
+            ],
+            spin: [
+                'Wirbeln wir das Rad, Schätzchen!',
+                'Das Rad der Verzweiflung dreht sich. Ich liebe es.',
+                'Dreh es, als gäbe es kein Morgen, Liebling!',
+                'Rrrrrund geht es! Wer braucht schon Fitnessstudio, wenn man so ein Showrad hat?',
+                'Oh, spannend! Mein Puls rast... nicht wirklich, aber ich tu mal so.',
+                'Gib alles! Das Ding klemmt nicht, Darling.'
+            ],
+            bankrupt: [
+                'Aua! Das tut weh. Bankrott, Liebling. Alles ist weg!',
+                'Oh no! Dein Geldbeutel ist jetzt so leer wie der Kopf meines Ex-Mannes.',
+                'Pleite! Tja, vom Tellerwäscher zum... Tellerwäscher.',
+                'Tschüss Kohle! Ein tragischer Moment für die Fernsehgeschichte.',
+                'Bankrott! Das ist die Strafe des Universums. Nächster bitte!',
+                'Das war\'s mit dem Luxusurlaub. Alles auf Null, Schätzchen.'
+            ],
+            skip: [
+                'Zwangspause! Zeit für mich, meinen Lippenstift nachzuziehen.',
+                'Aussetzen. Das Schicksal will dich heute einfach nicht reden hören.',
+                'Der Nächste bitte! Du darfst jetzt schweigend gut aussehen.',
+                'Pech gehabt, Liebling. Setz dich und entspann dich eine Runde.',
+                'Einmal aussetzen. Ist vielleicht besser so für uns alle.'
+            ],
+            guess_c: [
+                'Großartig! Welchen Konsonanten darf ich dir servieren?',
+                'Die Kasse klingelt vielleicht gleich. Ich brauche einen Buchstaben!',
+                'Ein hübsches Sümmchen! Welcher Konsonant soll es sein, Liebling?',
+                'Gut gemacht. Nun verrate mir deinen Wunsch-Konsonanten.',
+                'Ich höre? Bitte etwas, das auch in diesem Rätsel vorkommt.',
+                'K, L, M, N? Mach es spannend, Schätzchen!'
+            ],
+            guess_v: [
+                'Wer Geld hat, kauft Vokale. Welchen möchtest du?',
+                '250 Euro für einen läppischen Vokal. Wie dekadent. Welcher?',
+                'Ah, ein Shopping-Ausflug im Alphabet. A, E, I, O oder U?',
+                'Gekauft! Welchen Vokal darf meine Tafel-Fee aufdecken?',
+                'Gute Wahl. Vokale sind das Salz in der Suppe. Welchen nehmen wir?'
+            ],
+            correct: [
+                'Fabelhaft! Völlig richtig.',
+                'Ding Dong! Wir haben einen Treffer, Liebling.',
+                'Ist das zu fassen? Das war tatsächlich richtig!',
+                'Bravo! Ich hätte das ja nicht erwartet.',
+                'Exzellent geraten, mein Schatz.',
+                'Richtig! Das Glück ist heute mit den Ahnungslosen.'
+            ],
+            wrong: [
+                'Oh nein, Liebling. Das war ein Griff ins Klo.',
+                'Möööp! Völlig daneben. Mein armes Trommelfell.',
+                'Falsch! Hast du dir das Rätsel eigentlich mal angesehen?',
+                'Tragisch. Einfach nur tragisch. Der Nächste bitte.',
+                'Nein, nein, nein. Das war ein Schuss in den Ofen, Schätzchen.',
+                'Leider falsch. Zeit für einen Spielerwechsel.'
+            ],
+            solve_prompt: [
+                'Mutig! Du willst lösen? Dann spuck\'s aus!',
+                'Die Stunde der Wahrheit! Was steht da an meiner wunderschönen Wand?',
+                'Alles oder nichts, Darling. Tipp die Lösung ein!',
+                'Ich bin gespannt wie ein Flitzebogen. Löse es!',
+                'Oh, ein Genie unter uns! Dann zeig mal, was du weißt.'
+            ],
+            solve_fail: [
+                'Das war... kreativ. Aber leider komplett falsch.',
+                'Da war der Wunsch Vater des Gedankens. Völlig daneben, Liebling.',
+                'Nein! Ich fasse es nicht. So nah und doch so fern.',
+                'Peinlich, peinlich. Bitte setz dich wieder.',
+                'Falsch! Das kostet dich deinen Zug. Wie ärgerlich.'
+            ],
+            win: [
+                'Sensationell! Es ist gelöst! Applaus, Applaus!',
+                'Wahnsinn! Wir haben die Lösung. Fühl dich gedrückt, Liebling!',
+                'Exzellent! Das war ja oscarreif gelöst.',
+                'Richtig! Ich wusste, in dir steckt ein kleines Genie.',
+                'Trommelwirbel! Das ist die absolut korrekte Lösung!'
+            ],
+            score_announce: [
+                'Schauen wir auf die Konten: Wer hat hier das Sagen?',
+                'Geld regiert die Welt. Lass uns die Punkte checken, Darling.',
+                'Zeit für Kassensturz! Wer kann sich heute die dicken Preise leisten?'
+            ],
+            shop_inter: [
+                'Gewinner der Runde, du darfst in meinen Boutique-Shop! Kaufen oder sparen für die nächste Runde?',
+                'Du hast Geld erspielt! Willst du es jetzt verprassen oder für das große Finale aufheben?',
+                'Willkommen im Zwischen-Shop, Darling. Gönnst du dir was, oder sparst du eisern?',
+                'Zeit ist Geld, aber Zeug ist cooler. Kaufen oder sparen, Liebling?'
+            ],
+            shop_finale: [
+                'DAS GROSSE FINALE! Zeit, die Millionen für absoluten Luxus rauszuhauen!',
+                'Es ist vorbei! Willkommen im VIP-Showroom. Kauf mir den Laden leer, Schätzchen!',
+                'Du bist der Champion! Hier sind die Hauptgewinne. Gönn dir!'
+            ],
+            new_round: [
+                'Neue Runde, neues Glück und neue Chancen auf kolossale Peinlichkeiten.',
+                'Wir drehen weiter! Frische Runde, frisches Drama.',
+                'Runde weiter, Lippen glänzen, Nerven blank. Ich liebe Fernsehen.',
+                'Zurück ans Brett, meine Lieben. Das Chaos geht weiter.'
+            ]
+        };
+
+        function toggleBGM() {
+            const btn = document.getElementById('bgm-toggle');
+            const bgMusic = document.getElementById('background-music');
+            isBgmPlaying = !isBgmPlaying;
+
+            if (isBgmPlaying) {
+                bgMusic.volume = 0.2;
+                bgMusic.play().catch(() => {});
+                btn.innerText = 'Musik: AN';
+                btn.classList.add('bg-pink-900');
+            } else {
+                bgMusic.pause();
+                btn.innerText = 'Musik: AUS';
+                btn.classList.remove('bg-pink-900');
+            }
+        }
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playTone(freq, type, duration, vol = 0.1) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        const SFX = {
+            tick: () => playTone(800, 'square', 0.05, 0.02),
+            ding: () => playTone(1200, 'sine', 0.4, 0.1),
+            buzzer: () => {
+                playTone(150, 'sawtooth', 0.5, 0.15);
+                playTone(158, 'sawtooth', 0.5, 0.15);
+            },
+            bankrupt: () => {
+                playTone(200, 'sawtooth', 0.5, 0.2);
+                setTimeout(() => playTone(150, 'sawtooth', 1.0, 0.2), 400);
+            },
+            fanfare: () => {
+                playTone(523.25, 'square', 0.15, 0.1);
+                setTimeout(() => playTone(659.25, 'square', 0.15, 0.1), 150);
+                setTimeout(() => playTone(783.99, 'square', 0.15, 0.1), 300);
+                setTimeout(() => playTone(1046.50, 'square', 0.5, 0.15), 450);
+            },
+            kaching: () => {
+                playTone(2000, 'sine', 0.1, 0.05);
+                setTimeout(() => playTone(3000, 'sine', 0.3, 0.1), 100);
+            }
+        };
+
+        function renderVoiceOptions(voices, fallbackLabel = 'Lade Stimmen...') {
+            const select = document.getElementById('voice-select');
+            if (!select) return;
+
+            if (!voices.length) {
+                select.innerHTML = `<option value="">${fallbackLabel}</option>`;
+                return;
+            }
+
+            select.innerHTML = '';
+            voices.forEach((voice, index) => {
+                const opt = document.createElement('option');
+                opt.value = index;
+                opt.innerText = `${voice.name} (${voice.lang})`;
+                select.appendChild(opt);
+            });
+
+            const bestIdx = voices.findIndex((voice) =>
+                voice.name.includes('Premium') ||
+                voice.name.includes('Google') ||
+                voice.name.includes('Anna') ||
+                voice.name.includes('Katja')
+            );
+            if (bestIdx !== -1) {
+                select.selectedIndex = bestIdx;
+            }
+        }
+
+        function loadVoices() {
+            if (!('speechSynthesis' in window)) return;
+
+            const allVoices = window.speechSynthesis.getVoices();
+            const germanVoices = allVoices.filter((voice) => voice.lang && voice.lang.toLowerCase().startsWith('de'));
+            availableVoices = germanVoices.length ? germanVoices : allVoices;
+
+            if (availableVoices.length) {
+                renderVoiceOptions(availableVoices);
+                if (voiceRetryTimer) {
+                    clearTimeout(voiceRetryTimer);
+                    voiceRetryTimer = null;
+                }
+                return;
+            }
+
+            voiceLoadAttempts += 1;
+            renderVoiceOptions([], voiceLoadAttempts < 8 ? 'Stimmen werden geladen...' : 'Keine Stimmen gefunden');
+
+            if (voiceLoadAttempts < 8) {
+                voiceRetryTimer = setTimeout(loadVoices, 400);
+            }
+        }
+
+        function setupVoice() {
+            if (!('speechSynthesis' in window)) {
+                renderVoiceOptions([], 'Browser ohne Sprachsynthese');
+                return;
+            }
+
+            voiceLoadAttempts = 0;
+            renderVoiceOptions([], 'Stimmen werden geladen...');
+
+            // Manche Browser liefern Stimmen erst nach einem "Wake-up" des Synthesizers.
+            window.speechSynthesis.getVoices();
+            loadVoices();
+
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = () => {
+                    voiceLoadAttempts = 0;
+                    loadVoices();
+                };
+            }
+        }
+
+        function testVoice() {
+            loadVoices();
+            const select = document.getElementById('voice-select');
+            if (!select || !availableVoices.length) return;
+            const voice = availableVoices[select.value];
+            const msg = new SpeechSynthesisUtterance('Hallo Lieblinge! Klaus-Dietra hier. Bin ich laut genug?');
+            msg.lang = voice?.lang || 'de-DE';
+            msg.voice = voice;
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(msg);
+        }
+
+        function modSays(type, customText = null) {
+            let text = customText;
+
+            if (!text && modLines[type]) {
+                const allLines = modLines[type];
+                let availableLines = allLines.filter((line) => !spokenHistory.includes(line));
+                if (!availableLines.length) {
+                    availableLines = allLines;
+                    spokenHistory = spokenHistory.slice(-5);
+                }
+                text = availableLines[Math.floor(Math.random() * availableLines.length)];
+                spokenHistory.push(text);
+                if (spokenHistory.length > 30) {
+                    spokenHistory.shift();
+                }
+            }
+
+            if (!text) return;
+
+            const desktopEl = document.getElementById('mod-text');
+            const mobileEl = document.getElementById('mod-text-mobile');
+            if (desktopEl) desktopEl.innerText = `"${text}"`;
+            if (mobileEl) mobileEl.innerText = `"${text}"`;
+
+            if ('speechSynthesis' in window) {
+                loadVoices();
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'de-DE';
+                msg.pitch = 1.1;
+                msg.rate = 1.05;
+                const select = document.getElementById('voice-select');
+                if (select && availableVoices.length > 0) {
+                    msg.voice = availableVoices[select.value];
+                }
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        function modeLabel(mode) {
+            if (mode === 'cpu') return 'Solo vs CPU';
+            if (mode === 'online') return 'Online';
+            return 'Lokal';
+        }
+
+        function roleLabel() {
+            if (session.canControlAll) return 'Regie';
+            if (session.slotIndex === 0) return 'Spieler 1';
+            if (session.slotIndex === 1) return 'Spieler 2';
+            if (session.roomFull) return 'Raum voll';
+            return 'Nicht beigetreten';
+        }
+
+        function updateBootstrapError() {
+            const errorEl = document.getElementById('bootstrap-error');
+            if (!errorEl) return;
+            errorEl.innerText = bootstrapError;
+            errorEl.classList.toggle('hidden', !bootstrapError);
+        }
+
+        function emitToServer(eventName, payload = undefined) {
+            if (!socket) {
+                bootstrapError = 'Socket.io ist nicht geladen. Starte "node server.js" und oeffne danach http://localhost:3000 .';
+                updateBootstrapError();
+                return;
+            }
+            if (payload === undefined) {
+                socket.emit(eventName);
+            } else {
+                socket.emit(eventName, payload);
+            }
+        }
+
+        function showBgmButton() {
+            document.getElementById('bgm-toggle').classList.remove('hidden');
+        }
+
+        function ensureMusicStarted() {
+            initAudio();
+            showBgmButton();
+            if (!isBgmPlaying) {
+                toggleBGM();
+            }
+        }
+
+        function canControlTurn() {
+            if (!gameState || !gameState.players?.length) return false;
+            const current = gameState.players[gameState.currentPlayer];
+            if (!current || current.isCPU) return false;
+            if (session.canControlAll) return true;
+            return session.slotIndex === gameState.currentPlayer;
+        }
+
+        function canOpenShop() {
+            if (!gameState || gameState.phase !== 'solved') return false;
+            return session.canControlAll || session.slotIndex !== null;
+        }
+
+        function canManageShop() {
+            if (!gameState || gameState.phase !== 'shop') return false;
+            if (session.canControlAll) return true;
+            return session.slotIndex === gameState.shop.buyerIndex || session.slotIndex === 0;
+        }
+
+        function canResetGame() {
+            return session.canControlAll || session.slotIndex === 0 || session.isHost;
+        }
+
+        function handleModeChange() {
+            const mode = document.getElementById('mode-select').value;
+            const isOnline = mode === 'online';
+            const isCpu = mode === 'cpu';
+
+            document.getElementById('p1-label').innerText = isOnline ? 'Dein Name' : 'Name Spieler 1';
+            document.getElementById('p2-label').innerText = isCpu ? 'Name CPU Gegner' : 'Name Spieler 2';
+            document.getElementById('p2-input').placeholder = isCpu ? 'CPU Klaus 3000' : 'Spieler 2';
+            document.getElementById('p2-wrapper').classList.toggle('hidden', isOnline);
+            document.getElementById('online-slots').classList.toggle('hidden', !isOnline);
+            document.getElementById('local-actions').classList.toggle('hidden', isOnline);
+            document.getElementById('online-actions').classList.toggle('hidden', !isOnline);
+        }
+
+        function startConfiguredGame() {
+            ensureMusicStarted();
+            const mode = document.getElementById('mode-select').value;
+            emitToServer('configure_local_game', {
+                mode,
+                player1Name: document.getElementById('p1-input').value,
+                player2Name: document.getElementById('p2-input').value
+            });
+        }
+
+        function joinOnlineGame() {
+            ensureMusicStarted();
+            emitToServer('join_online', {
+                name: document.getElementById('p1-input').value
+            });
+        }
+
+        function startOnlineGame() {
+            ensureMusicStarted();
+            emitToServer('start_online_game');
+        }
+
+        function spinWheel() {
+            emitToServer('spin_wheel');
+        }
+
+        function buyVowelPhase() {
+            emitToServer('buy_vowel');
+        }
+
+        function openSolveModal() {
+            emitToServer('begin_solve');
+        }
+
+        function closeSolveModal() {
+            emitToServer('cancel_solve');
+        }
+
+        function checkSolution() {
+            emitToServer('solve_puzzle', {
+                attempt: document.getElementById('solve-input').value
+            });
+        }
+
+        function openShopPhase() {
+            emitToServer('open_shop');
+        }
+
+        function continueAfterShop() {
+            if (!gameState) return;
+            if (gameState.shop.isFinale) {
+                emitToServer('reset_game');
+            } else {
+                emitToServer('continue_from_shop');
+            }
+        }
+
+        function playSpinTicks() {
+            spinTickTimers.forEach((timer) => clearTimeout(timer));
+            spinTickTimers = [];
+            let tickCount = 0;
+
+            function queueTick(delay) {
+                const timer = setTimeout(() => {
+                    SFX.tick();
+                    tickCount += 1;
+                    if (tickCount < 25) {
+                        queueTick(20 + (tickCount * tickCount * 0.8));
+                    }
+                }, delay);
+                spinTickTimers.push(timer);
+            }
+
+            queueTick(0);
+        }
+
+        function buildWheel() {
+            if (!gameState?.wheelSegments?.length) return;
+            const signature = JSON.stringify(gameState.wheelSegments);
+            if (signature === lastWheelSignature) return;
+
+            const wheel = document.getElementById('wheel-container');
+            wheel.innerHTML = '';
+            lastWheelSignature = signature;
+            const segmentDegree = 360 / gameState.wheelSegments.length;
+            const gradientParts = gameState.wheelSegments.map((segment, index) => `${segment.color} ${index * segmentDegree}deg ${(index + 1) * segmentDegree}deg`);
+            wheel.style.background = `conic-gradient(${gradientParts.join(', ')})`;
+
+            gameState.wheelSegments.forEach((segment, index) => {
+                const angle = (index * segmentDegree) + (segmentDegree / 2);
+                const el = document.createElement('div');
+                el.className = 'absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1/2 origin-bottom flex items-start justify-center pt-2 md:pt-4';
+                el.style.transform = `rotate(${angle}deg)`;
+                el.innerHTML = `<span class="text-[10px] md:text-xs font-bold text-white uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] transform -rotate-90 origin-bottom whitespace-nowrap">${segment.label}</span>`;
+                wheel.appendChild(el);
+            });
+        }
+
+        function renderBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            const guessed = new Set(gameState.guessedLetters || []);
+
+            gameState.currentPuzzleText.split(' ').forEach((word) => {
+                const wordContainer = document.createElement('div');
+                wordContainer.className = 'flex gap-1 md:gap-2';
+
+                for (const char of word) {
+                    const tile = document.createElement('div');
+                    tile.className = 'w-8 h-12 md:w-12 md:h-16 flex items-center justify-center text-xl md:text-3xl font-bold rounded border bg-white text-black border-gray-300 transition-all';
+                    const shouldReveal = !alphabet.includes(char) || guessed.has(char);
+
+                    if (shouldReveal) {
+                        tile.innerText = char;
+                        tile.classList.add('animate-[pulse_0.3s_ease-in-out]');
+                    } else {
+                        tile.classList.add('bg-indigo-200');
+                    }
+                    wordContainer.appendChild(tile);
+                }
+                board.appendChild(wordContainer);
+            });
+        }
+
+        function renderKeyboard() {
+            const keyboard = document.getElementById('keyboard');
+            keyboard.innerHTML = '';
+            const guessed = new Set(gameState.guessedLetters || []);
+            const canAct = canControlTurn();
+
+            alphabet.forEach((letter) => {
+                const isVowel = vowels.includes(letter);
+                const isGuessed = guessed.has(letter);
+                const btn = document.createElement('button');
+                btn.innerText = letter;
+
+                let classes = 'w-8 h-10 md:w-10 md:h-12 text-sm md:text-lg font-bold rounded transition-all border-b-4 ';
+                let enabled = false;
+
+                if (isGuessed || !canAct) {
+                    classes += 'bg-gray-800 text-gray-600 border-gray-900 opacity-50';
+                } else if (gameState.phase === 'guess_consonant') {
+                    if (isVowel) {
+                        classes += 'bg-gray-800 text-gray-600 opacity-50';
+                    } else {
+                        enabled = true;
+                        classes += 'bg-indigo-200 text-indigo-900 border-indigo-400 hover:bg-indigo-300 active:translate-y-1';
+                    }
+                } else if (gameState.phase === 'guess_vowel') {
+                    if (!isVowel) {
+                        classes += 'bg-gray-800 text-gray-600 opacity-50';
+                    } else {
+                        enabled = true;
+                        classes += 'bg-pink-200 text-pink-900 border-pink-400 hover:bg-pink-300 active:translate-y-1';
+                    }
+                } else {
+                    classes += 'bg-gray-700 text-gray-400 opacity-50';
+                }
+
+                btn.className = classes;
+                btn.disabled = !enabled;
+                if (enabled) {
+                    btn.onclick = () => emitToServer('guess_letter', { letter });
+                }
+                keyboard.appendChild(btn);
+            });
+        }
+
+        function renderPlayerCards() {
+            const p1 = gameState.players[0];
+            const p2 = gameState.players[1];
+
+            document.getElementById('p1-name').innerText = p1.name;
+            document.getElementById('p2-name').innerText = p2.name;
+            document.getElementById('p1-score').innerText = `${p1.score} €`;
+            document.getElementById('p2-score').innerText = `${p2.score} €`;
+            document.getElementById('p1-badge').innerText = p1.isCPU ? 'CPU' : (p1.connected ? 'LIVE' : 'WEG');
+            document.getElementById('p2-badge').innerText = p2.isCPU ? 'CPU' : (p2.connected ? 'LIVE' : 'WEG');
+
+            const p1Card = document.getElementById('p1-card');
+            const p2Card = document.getElementById('p2-card');
+
+            if (gameState.currentPlayer === 0) {
+                p1Card.className = 'bg-blue-600/50 border-2 border-blue-400 rounded-xl p-3 w-40 md:w-56 text-center transform scale-110 shadow-[0_0_20px_rgba(59,130,246,0.6)] z-10 transition-all';
+                p2Card.className = 'bg-gray-800 border-2 border-gray-600 rounded-xl p-3 w-40 md:w-56 text-center opacity-50 transform scale-95 transition-all';
+            } else {
+                p2Card.className = 'bg-red-600/50 border-2 border-red-400 rounded-xl p-3 w-40 md:w-56 text-center transform scale-110 shadow-[0_0_20px_rgba(239,68,68,0.6)] z-10 transition-all';
+                p1Card.className = 'bg-gray-800 border-2 border-gray-600 rounded-xl p-3 w-40 md:w-56 text-center opacity-50 transform scale-95 transition-all';
+            }
+        }
+
+        function renderActionState() {
+            const actionButtons = document.getElementById('action-buttons');
+            const nextRoundContainer = document.getElementById('next-round-container');
+            const canAct = canControlTurn();
+            const current = gameState.players[gameState.currentPlayer];
+
+            if (gameState.phase === 'solved') {
+                actionButtons.classList.add('hidden');
+                nextRoundContainer.classList.remove('hidden');
+                document.getElementById('next-btn').disabled = !canOpenShop();
+                document.getElementById('next-btn').innerText = gameState.round >= gameState.maxRounds ? 'ZUM GROSSEN FINALE!' : 'Zum Zwischen-Shop gehen';
+                return;
+            }
+
+            actionButtons.classList.remove('hidden');
+            nextRoundContainer.classList.add('hidden');
+
+            document.getElementById('btn-spin').disabled = !(canAct && gameState.phase === 'action');
+            document.getElementById('btn-solve').disabled = !(canAct && gameState.phase === 'action');
+            document.getElementById('btn-vowel').disabled = !(canAct && gameState.phase === 'action' && current.score >= 250);
+        }
+
+        function updateWheelRotation() {
+            const wheel = document.getElementById('wheel-container');
+            if (!wheel) return;
+            if (gameState.wheelRotation !== lastWheelRotation) {
+                wheel.style.transform = `rotate(${gameState.wheelRotation}deg)`;
+                lastWheelRotation = gameState.wheelRotation;
+            }
+        }
+
+        function renderSetup() {
+            const select = document.getElementById('mode-select');
+            const onlineClaimed = gameState.mode === 'online' && gameState.players.some((player) => player.connected || player.name !== `Spieler ${player.slot + 1}`);
+            if (gameState.mode) {
+                select.value = gameState.mode;
+            }
+            select.disabled = Boolean(gameState.mode === 'online' && onlineClaimed);
+
+            document.getElementById('slot-player-1').innerText = gameState.players[0].connected ? gameState.players[0].name : 'Frei';
+            document.getElementById('slot-player-2').innerText = gameState.players[1].connected ? gameState.players[1].name : 'Frei';
+            document.getElementById('online-room-info').innerText = gameState.onlineSlotsTaken >= 2
+                ? 'Raum voll. Keine Zuschauerplaetze.'
+                : `Noch ${2 - gameState.onlineSlotsTaken} Slot(s) frei.`;
+            document.getElementById('session-role').innerText = `DEINE ROLLE: ${roleLabel()}`;
+            updateBootstrapError();
+
+            let statusText = 'Wähle deinen Modus und zieh die Show groß auf.';
+            if (gameState.mode === 'online') {
+                if (session.roomFull) {
+                    statusText = 'Der Online-Raum ist bereits voll. Dieses Spiel erlaubt bewusst keine Zuschauer.';
+                } else if (gameState.onlineReady && session.slotIndex === 0) {
+                    statusText = 'Beide Online-Spieler stehen bereit. Spieler 1 darf die Show jetzt starten.';
+                } else if (gameState.onlineReady) {
+                    statusText = 'Die Besetzung ist komplett. Jetzt wartet alles auf den Startknopf von Spieler 1.';
+                } else {
+                    statusText = 'Online-Lobby offen: genau zwei Spieler, keine Zuschauer.';
+                }
+            } else if (gameState.mode === 'cpu') {
+                statusText = 'Solo gegen CPU: Du steuerst lokal die menschliche Seite, der Server übernimmt den Bot.';
+            } else if (gameState.mode === 'local') {
+                statusText = 'Lokal zu zweit: ein Gerät, zwei Kandidaten, maximaler Trash-TV-Schaden.';
+            }
+            document.getElementById('setup-status').innerText = statusText;
+
+            const canStartOnline = gameState.mode === 'online' && session.slotIndex === 0 && gameState.onlineReady;
+            document.getElementById('online-start-btn').disabled = !canStartOnline;
+            handleModeChange();
+        }
+
+        function renderGame() {
+            showBgmButton();
+            document.getElementById('round-display').innerText = gameState.round;
+            document.getElementById('category-display').innerText = `KATEGORIE: ${gameState.currentCategory}`;
+            document.getElementById('mode-display').innerText = modeLabel(gameState.mode);
+            document.getElementById('role-display').innerText = roleLabel();
+            document.getElementById('live-spectators').innerText = gameState.mode === 'online' ? Math.max(0, 2 - gameState.onlineSlotsTaken) : 0;
+
+            buildWheel();
+            renderPlayerCards();
+            renderBoard();
+            renderKeyboard();
+            renderActionState();
+            updateWheelRotation();
+        }
+
+        function renderShop() {
+            const isFinale = gameState.shop.isFinale;
+            const buyer = gameState.players[gameState.shop.buyerIndex];
+            const canManage = canManageShop();
+            const items = gameState.shopItems.filter((item) => item.isGrand === isFinale);
+
+            document.getElementById('shop-title').innerText = isFinale ? 'DAS GROSSE FINALE' : `SHOPPING: RUNDE ${gameState.round}`;
+            document.getElementById('shop-subtitle').innerText = isFinale
+                ? 'Nur noch Champagner, Chrom und Größenwahn. Wer jetzt gewinnt, kauft wie ein Fernsehgott.'
+                : 'Du hast die Runde gewonnen! Zeit, dein Geld rauszuhauen oder strategisch zu sparen.';
+            document.getElementById('buyer-name').innerText = isFinale ? `CHAMPION: ${buyer.name}` : `Käufer: ${buyer.name}`;
+            document.getElementById('buyer-budget').innerText = `${buyer.score} €`;
+
+            const container = document.getElementById('shop-items');
+            container.innerHTML = '';
+
+            items.forEach((item) => {
+                const canAfford = buyer.score >= item.price;
+                const card = document.createElement('div');
+                card.className = `p-6 rounded-2xl border-2 flex flex-col items-center text-center transition-all ${
+                    item.bought ? 'bg-green-900/50 border-green-500 opacity-50 grayscale' :
+                    canAfford && canManage ? 'bg-gray-800 border-gray-600 hover:border-pink-500 hover:scale-105 cursor-pointer' :
+                    'bg-gray-900 border-gray-800 opacity-50 cursor-not-allowed'
+                }`;
+
+                card.innerHTML = `
+                    <div class="text-6xl mb-4">${item.img}</div>
+                    <h3 class="text-lg font-bold text-white mb-2 h-14">${item.name}</h3>
+                    <div class="mt-auto pt-4 border-t border-gray-700 w-full">
+                        <span class="${item.bought ? 'text-green-400' : 'text-pink-400'} font-black text-2xl">${item.price} €</span>
+                    </div>
+                `;
+
+                if (!item.bought && canAfford && canManage) {
+                    card.onclick = () => emitToServer('buy_item', { itemId: item.id });
+                }
+                container.appendChild(card);
+            });
+
+            const continueBtn = document.getElementById('shop-continue-btn');
+            if (isFinale) {
+                continueBtn.innerText = 'Show neu starten!';
+                continueBtn.disabled = !canResetGame();
+            } else {
+                continueBtn.innerText = 'Sparen & Nächste Runde starten!';
+                continueBtn.disabled = !canManage;
+            }
+        }
+
+        function toggleScreens() {
+            const setupScreen = document.getElementById('setup-screen');
+            const gameScreen = document.getElementById('game-screen');
+            const shopScreen = document.getElementById('shop-screen');
+            const solveModal = document.getElementById('solve-modal');
+
+            const inSetup = gameState.phase === 'setup';
+            const inShop = gameState.phase === 'shop';
+
+            setupScreen.classList.toggle('hidden', !inSetup);
+            gameScreen.classList.toggle('hidden', inSetup || inShop);
+            gameScreen.classList.toggle('opacity-0', inSetup || inShop);
+            gameScreen.classList.toggle('scale-95', inSetup || inShop);
+            shopScreen.classList.toggle('hidden', !inShop);
+            solveModal.classList.toggle('hidden', !(gameState.phase === 'solve' && canControlTurn()));
+
+            if (gameState.phase === 'solve' && canControlTurn()) {
+                document.getElementById('solve-input').focus();
+            }
+        }
+
+        function renderAll() {
+            if (!gameState) return;
+            renderSetup();
+            toggleScreens();
+            if (gameState.phase !== 'setup' && gameState.phase !== 'shop') {
+                renderGame();
+            }
+            if (gameState.phase === 'shop') {
+                renderShop();
+            }
+        }
+
+        function setupSocketConnection() {
+            if (!window.io) {
+                const isFileOpen = window.location.protocol === 'file:';
+                bootstrapError = isFileOpen
+                    ? 'Diese HTML-Datei wurde direkt geoeffnet. Bitte starte "node server.js" und rufe dann http://localhost:3000 auf.'
+                    : 'Socket.io konnte nicht geladen werden. Bitte pruefe, ob der Express-Server ueber "node server.js" laeuft.';
+                updateBootstrapError();
+                return;
+            }
+
+            socket = window.io();
+            bootstrapError = '';
+            updateBootstrapError();
+
+            socket.on('session_info', (info) => {
+                session = info;
+                renderAll();
+            });
+
+            socket.on('state_update', (newState) => {
+                const previousRotation = gameState?.wheelRotation ?? 0;
+                gameState = newState;
+                if (gameState.phase !== 'setup') {
+                    showBgmButton();
+                }
+                if (gameState.phase === 'spinning' && gameState.wheelRotation !== previousRotation) {
+                    playSpinTicks();
+                }
+                renderAll();
+            });
+
+            socket.on('moderator_speak', ({ type, text }) => {
+                modSays(type, text);
+            });
+
+            socket.on('play_sfx', (name) => {
+                initAudio();
+                if (SFX[name]) {
+                    SFX[name]();
+                }
+            });
+
+            socket.on('room_full', ({ message }) => {
+                bootstrapError = message || 'Online-Raum voll. Keine Zuschauerplaetze.';
+                updateBootstrapError();
+            });
+        }
+
+        document.getElementById('solve-input').addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                checkSolution();
+            }
+        });
+
+        window.addEventListener('focus', loadVoices);
+        document.addEventListener('click', loadVoices, { once: true });
+
+        setupVoice();
+        handleModeChange();
+        updateBootstrapError();
+        setupSocketConnection();
+    </script>
+</body>
+</html>
