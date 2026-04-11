@@ -6,6 +6,9 @@
     <title>TV Raterad Royale - Klaus-Dietra Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bungee+Inline&family=Rajdhani:wght@400;600;700&display=swap');
+        body { font-family: 'Rajdhani', sans-serif; }
+        .show-title { font-family: 'Bungee Inline', sans-serif; }
         .spin-transition { transition: transform 5s cubic-bezier(0.15, 0.85, 0.15, 1); }
         .fade-transition { transition: opacity 0.5s, transform 0.5s; }
         .speech-bubble::after {
@@ -18,12 +21,100 @@
             border-color: transparent transparent white transparent;
         }
         .crt-glow { text-shadow: 0 0 10px rgba(236,72,153,0.8), 0 0 20px rgba(236,72,153,0.5); }
+        .game-panel {
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01)),
+                linear-gradient(135deg, rgba(22, 30, 74, 0.94), rgba(48, 10, 64, 0.92));
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.08),
+                0 24px 60px rgba(0,0,0,0.38);
+        }
+        .chrome-strip {
+            background:
+                linear-gradient(90deg, rgba(56,189,248,0.22), rgba(236,72,153,0.22), rgba(249,115,22,0.22));
+        }
+        .board-word {
+            display: flex;
+            gap: 0.35rem;
+        }
+        .board-slot {
+            width: 2.35rem;
+            height: 3.2rem;
+            padding: 0.18rem;
+            border-radius: 0.9rem;
+            background: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(129,140,248,0.18));
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.25),
+                0 8px 18px rgba(0,0,0,0.28);
+            perspective: 700px;
+        }
+        .board-disc {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+        }
+        .board-disc-face {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            font-weight: 800;
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.3),
+                inset 0 -4px 10px rgba(0,0,0,0.18);
+        }
+        .board-disc-front {
+            background:
+                radial-gradient(circle at 35% 35%, rgba(255,255,255,0.28), transparent 30%),
+                linear-gradient(180deg, #1e3a8a, #312e81);
+            border: 1px solid rgba(255,255,255,0.18);
+        }
+        .board-disc-back {
+            background:
+                radial-gradient(circle at 35% 35%, rgba(255,255,255,0.88), rgba(255,255,255,0.58) 42%, rgba(191,219,254,0.92) 100%);
+            color: #111827;
+            transform: rotateY(180deg);
+            border: 1px solid rgba(255,255,255,0.65);
+            text-shadow: 0 1px 0 rgba(255,255,255,0.45);
+        }
+        .board-disc-revealed {
+            transform: rotateY(180deg);
+        }
+        .board-disc-new {
+            animation: letterFlipReveal 0.75s cubic-bezier(0.2, 0.88, 0.22, 1.1);
+        }
+        @keyframes letterFlipReveal {
+            0% {
+                transform: rotateY(0deg) scale(0.92);
+            }
+            55% {
+                transform: rotateY(208deg) scale(1.06);
+            }
+            100% {
+                transform: rotateY(180deg) scale(1);
+            }
+        }
+        @media (min-width: 768px) {
+            .board-slot {
+                width: 3.1rem;
+                height: 4.2rem;
+                padding: 0.24rem;
+            }
+            .board-word {
+                gap: 0.5rem;
+            }
+        }
         ::-webkit-scrollbar { width: 10px; }
         ::-webkit-scrollbar-track { background: #111827; }
         ::-webkit-scrollbar-thumb { background: #ec4899; border-radius: 5px; }
     </style>
 </head>
-<body class="bg-gray-950 text-white font-sans min-h-screen flex flex-col items-center overflow-x-hidden select-none pb-10">
+<body class="bg-[radial-gradient(circle_at_top,_rgba(236,72,153,0.22),_transparent_30%),linear-gradient(180deg,_#080a14_0%,_#130f24_48%,_#090b12_100%)] text-white min-h-screen flex flex-col items-center overflow-x-hidden select-none pb-10">
     <button id="voice-toggle" onclick="toggleVoice()" class="fixed top-4 left-4 z-50 bg-gray-800 border-2 border-cyan-500 text-cyan-300 px-4 py-2 rounded-full text-xs font-bold uppercase hover:bg-gray-700 transition-all shadow-[0_0_10px_rgba(34,211,238,0.3)]">
         Stimme: AUS
     </button>
@@ -36,28 +127,28 @@
     </audio>
 
     <div id="setup-screen" class="z-50 flex flex-col items-center justify-center min-h-screen w-full absolute inset-0 bg-gray-950 fade-transition py-10 overflow-y-auto">
-        <h1 class="text-4xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-orange-500 mb-2 uppercase tracking-widest drop-shadow-lg text-center mt-10">
+        <h1 class="show-title text-4xl md:text-6xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-fuchsia-400 to-amber-300 mb-2 uppercase tracking-[0.16em] drop-shadow-lg text-center mt-10">
             Raterad Royale
         </h1>
-        <h2 class="text-xl md:text-2xl font-bold text-pink-400 mb-4 uppercase tracking-[0.3em] text-center italic crt-glow">
+        <h2 class="text-xl md:text-2xl font-bold text-pink-300 mb-4 uppercase tracking-[0.34em] text-center italic crt-glow">
             Mit Klaus-Dietra
         </h2>
         <div class="text-center mb-6">
             <p id="session-role" class="text-sm md:text-base font-bold text-cyan-300 uppercase tracking-[0.25em]">Verbinde zur Show...</p>
             <p id="setup-status" class="text-gray-400 text-sm mt-2 max-w-xl px-6">
-                Wähle deinen Modus: lokal zu zweit, solo gegen CPU oder online mit einem echten Gegenüber.
+                Wähle deinen Modus: lokal zu dritt, solo gegen zwei CPU-Gegner oder online mit drei echten Menschen.
             </p>
             <p id="bootstrap-error" class="hidden text-red-400 text-sm mt-3 max-w-xl px-6 font-bold"></p>
         </div>
 
-        <div class="bg-gray-900 p-8 rounded-2xl border border-gray-700 shadow-2xl w-full max-w-xl my-4">
+        <div class="game-panel p-8 rounded-[28px] border border-fuchsia-500/30 w-full max-w-xl my-4">
             <div class="space-y-6">
                 <div>
                     <label class="block text-sm font-bold text-pink-400 mb-2">Spielmodus</label>
                     <select id="mode-select" onchange="handleModeChange()" class="w-full px-4 py-3 rounded-xl bg-gray-800 border-2 border-gray-700 focus:border-pink-500 focus:outline-none text-white">
-                        <option value="local">Lokal: 2 Spieler an einem Gerät</option>
-                        <option value="cpu">Lokal: 1 Spieler gegen CPU</option>
-                        <option value="online">Online: exakt 2 echte Spieler</option>
+                        <option value="local">Lokal: 3 Spieler an einem Gerät</option>
+                        <option value="cpu">Lokal: 1 Spieler gegen 2 CPU</option>
+                        <option value="online">Online: exakt 3 echte Spieler</option>
                     </select>
                 </div>
 
@@ -71,9 +162,14 @@
                     <input type="text" id="p2-input" placeholder="Spieler 2" class="w-full px-4 py-3 rounded-xl bg-gray-800 border-2 border-gray-700 focus:border-red-500 focus:outline-none text-white">
                 </div>
 
+                <div id="p3-wrapper">
+                    <label id="p3-label" class="block text-sm font-bold text-emerald-400 mb-2">Name Spieler 3</label>
+                    <input type="text" id="p3-input" placeholder="Spieler 3" class="w-full px-4 py-3 rounded-xl bg-gray-800 border-2 border-gray-700 focus:border-emerald-500 focus:outline-none text-white">
+                </div>
+
                 <div id="online-slots" class="hidden bg-gray-950/80 border border-gray-700 rounded-2xl p-4">
                     <p class="text-xs uppercase tracking-[0.3em] text-pink-400 font-black mb-3">Online-Lobby</p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div class="rounded-xl border border-blue-500/40 bg-blue-950/30 p-3">
                             <p class="text-xs uppercase tracking-widest text-blue-300">Slot Spieler 1</p>
                             <p id="slot-player-1" class="text-lg font-black text-white mt-1">Frei</p>
@@ -82,8 +178,12 @@
                             <p class="text-xs uppercase tracking-widest text-red-300">Slot Spieler 2</p>
                             <p id="slot-player-2" class="text-lg font-black text-white mt-1">Frei</p>
                         </div>
+                        <div class="rounded-xl border border-emerald-500/40 bg-emerald-950/30 p-3">
+                            <p class="text-xs uppercase tracking-widest text-emerald-300">Slot Spieler 3</p>
+                            <p id="slot-player-3" class="text-lg font-black text-white mt-1">Frei</p>
+                        </div>
                     </div>
-                    <p id="online-room-info" class="text-xs text-gray-400 mt-3">Maximal 2 Spieler, keine Zuschauer.</p>
+                    <p id="online-room-info" class="text-xs text-gray-400 mt-3">Maximal 3 Spieler, keine Zuschauer.</p>
                 </div>
 
                 <div class="pt-4 border-t border-gray-700">
@@ -118,9 +218,9 @@
     </div>
 
     <div id="game-screen" class="hidden flex-col items-center w-full max-w-7xl p-4 md:p-8 fade-transition opacity-0 scale-95">
-        <div class="w-full grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(320px,520px)_minmax(0,1fr)] items-center gap-4 md:gap-6 mb-6">
-            <div class="flex justify-center md:justify-end">
-            <div id="p1-card" class="bg-blue-900/40 border-2 border-blue-500 rounded-xl p-3 w-full max-w-[260px] text-center transition-all duration-300">
+        <div class="w-full grid grid-cols-1 xl:grid-cols-[minmax(220px,260px)_minmax(320px,520px)_minmax(220px,260px)_minmax(220px,260px)] justify-center justify-items-center items-center gap-4 md:gap-6 mb-6">
+            <div class="flex justify-center w-full">
+            <div id="p1-card" class="game-panel border-2 border-blue-400/70 rounded-[22px] p-4 w-full max-w-[260px] text-center transition-all duration-300">
                 <div class="flex justify-between items-center gap-2">
                     <h2 id="p1-name" class="text-blue-300 font-bold truncate">Spieler 1</h2>
                     <span id="p1-badge" class="text-[10px] uppercase tracking-widest bg-blue-500/20 text-blue-200 px-2 py-1 rounded-full">LIVE</span>
@@ -132,15 +232,15 @@
             <div class="hidden md:flex items-center justify-center">
                 <div class="flex items-center gap-4 w-full max-w-[520px] justify-center">
                     <img src="https://api.dicebear.com/7.x/micah/svg?seed=Dietra&backgroundColor=ec4899&mouth=pucker" alt="Moderator" class="w-16 h-16 rounded-full border-2 border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.5)] bg-gray-800">
-                    <div class="bg-gray-800 text-white border border-gray-600 p-3 rounded-2xl rounded-tl-none shadow-xl relative flex-1 speech-bubble min-h-[92px] flex flex-col justify-center">
+                    <div class="game-panel text-white border border-fuchsia-400/35 p-3 rounded-2xl rounded-tl-none shadow-xl relative flex-1 speech-bubble min-h-[92px] flex flex-col justify-center">
                         <p id="mod-text" class="text-base font-bold italic leading-tight text-pink-300">"Darling, das Scheinwerferlicht wartet!"</p>
                         <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest font-black">- Klaus-Dietra</p>
                     </div>
                 </div>
             </div>
 
-            <div class="flex justify-center md:justify-start">
-            <div id="p2-card" class="bg-gray-800 border-2 border-gray-600 rounded-xl p-3 w-full max-w-[260px] text-center transition-all duration-300 opacity-50">
+            <div class="flex justify-center w-full">
+            <div id="p2-card" class="game-panel border-2 border-red-400/35 rounded-[22px] p-4 w-full max-w-[260px] text-center transition-all duration-300 opacity-50">
                 <div class="flex justify-between items-center gap-2">
                     <h2 id="p2-name" class="text-red-300 font-bold truncate">Spieler 2</h2>
                     <span id="p2-badge" class="text-[10px] uppercase tracking-widest bg-red-500/20 text-red-200 px-2 py-1 rounded-full">LIVE</span>
@@ -148,11 +248,21 @@
                 <p id="p2-score" class="text-2xl md:text-3xl font-extrabold">0 €</p>
             </div>
             </div>
+
+            <div class="flex justify-center w-full">
+            <div id="p3-card" class="game-panel border-2 border-emerald-400/35 rounded-[22px] p-4 w-full max-w-[260px] text-center transition-all duration-300 opacity-50">
+                <div class="flex justify-between items-center gap-2">
+                    <h2 id="p3-name" class="text-emerald-300 font-bold truncate">Spieler 3</h2>
+                    <span id="p3-badge" class="text-[10px] uppercase tracking-widest bg-emerald-500/20 text-emerald-200 px-2 py-1 rounded-full">LIVE</span>
+                </div>
+                <p id="p3-score" class="text-2xl md:text-3xl font-extrabold">0 €</p>
+            </div>
+            </div>
         </div>
 
         <div class="flex md:hidden items-center gap-3 w-full max-w-xl mb-6 justify-center">
             <img src="https://api.dicebear.com/7.x/micah/svg?seed=Dietra&backgroundColor=ec4899&mouth=pucker" alt="Moderator" class="w-12 h-12 rounded-full border-2 border-pink-500 bg-gray-800">
-            <div class="bg-gray-800 border border-gray-600 text-pink-300 p-2 rounded-xl rounded-tl-none shadow-xl relative flex-1 text-sm font-bold italic">
+            <div class="game-panel border border-fuchsia-400/35 text-pink-300 p-2 rounded-xl rounded-tl-none shadow-xl relative flex-1 text-sm font-bold italic">
                 <p id="mod-text-mobile">"Darling!"</p>
             </div>
         </div>
@@ -164,20 +274,24 @@
             <div class="bg-gray-900 border border-gray-700 px-4 py-2 rounded-full text-pink-300 font-black">
                 Rolle: <span id="role-display">Nicht beigetreten</span>
             </div>
+            <div class="bg-gray-900 border border-gray-700 px-4 py-2 rounded-full text-amber-300 font-black">
+                Loesungsbonus: <span id="solve-bonus-display">1000</span> €
+            </div>
             <div class="bg-gray-900 border border-gray-700 px-4 py-2 rounded-full text-gray-300 font-black">
-                Extra Slots: <span id="live-spectators">0</span>
+                Freie Slots: <span id="live-spectators">0</span>
             </div>
         </div>
 
-        <div class="bg-indigo-950 p-4 md:p-6 rounded-xl border-8 border-indigo-900 shadow-[0_0_30px_rgba(49,46,129,0.8)] mb-8 w-full max-w-5xl relative overflow-hidden">
+        <div class="game-panel p-4 md:p-6 rounded-[28px] border-[10px] border-indigo-900/90 mb-8 w-full max-w-5xl relative overflow-hidden">
+            <div class="chrome-strip absolute top-0 left-0 right-0 h-2"></div>
             <div class="absolute top-0 left-0 w-full h-1/2 bg-white/5 pointer-events-none"></div>
 
-            <div class="flex justify-between items-center mb-6">
-                <div class="text-indigo-400 font-bold">Runde <span id="round-display">1</span> / 3</div>
-                <div id="category-display" class="text-center text-pink-400 font-black tracking-widest uppercase drop-shadow-md text-xl">
+            <div class="grid grid-cols-[1fr_auto_1fr] items-center justify-items-center mb-6 gap-4">
+                <div class="text-indigo-300 font-bold text-center justify-self-center">Runde <span id="round-display">1</span> / 3</div>
+                <div id="category-display" class="text-center text-pink-300 font-black tracking-widest uppercase drop-shadow-md text-xl justify-self-center">
                     KATEGORIE
                 </div>
-                <div class="w-16"></div>
+                <div class="text-cyan-300 font-bold text-center justify-self-center">Showtime</div>
             </div>
 
             <div id="board" class="flex flex-wrap justify-center gap-x-6 gap-y-3 w-full"></div>
@@ -247,7 +361,7 @@
             <input type="text" id="solve-input" class="w-full text-center text-2xl p-4 rounded-xl bg-gray-800 text-white border-b-4 border-pink-500 focus:outline-none uppercase font-bold mb-8" autocomplete="off" spellcheck="false">
             <div class="flex gap-4">
                 <button onclick="closeSolveModal()" class="flex-1 py-4 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold uppercase transition-all">Abbrechen</button>
-                <button onclick="checkSolution()" class="flex-1 py-4 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl font-black text-white uppercase hover:scale-105 transition-all">Einloggen!</button>
+                <button onclick="checkSolution()" class="flex-1 py-4 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl font-black text-white uppercase hover:scale-105 transition-all">Prüfen!</button>
             </div>
         </div>
     </div>
@@ -258,6 +372,17 @@
         const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ'.split('');
         let socket = null;
         let bootstrapError = '';
+        const clientKey = (() => {
+            try {
+                const stored = window.localStorage.getItem('raterad-client-key');
+                if (stored) return stored;
+                const created = `rr-${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`;
+                window.localStorage.setItem('raterad-client-key', created);
+                return created;
+            } catch (_error) {
+                return `rr-fallback-${Date.now().toString(36)}`;
+            }
+        })();
 
         let gameState = null;
         let session = {
@@ -277,6 +402,9 @@
         let spokenHistory = [];
         let lastWheelSignature = '';
         let lastWheelRotation = 0;
+        let lastRenderedPhase = null;
+        let lastPuzzleText = '';
+        let lastRevealedPositions = new Set();
         let spinTickTimers = [];
         let voiceRetryTimer = null;
         let voiceLoadAttempts = 0;
@@ -284,11 +412,15 @@
         const modLines = {
             start: [
                 'Willkommen zur Show, Lieblinge! Klaus-Dietra ist hier, um Träume zu erfüllen.',
-                'Zwei Kandidaten, ein Rad, null Ahnung. Das wird ein Fest, Schätzchen!',
+                'Drei Kandidaten, ein Rad, null Ahnung. Das wird ein Fest, Schätzchen!',
                 'Licht an, Kamera ab! Zeigt mir, was ihr draufhabt, meine Süßen.',
                 'Guten Abend Deutschland! Sind wir bereit für dramatisches Versagen?',
                 'Die Haare sitzen, das Make-up strahlt. Fehlt nur noch ein fähiger Kandidat.',
-                'Ich habe meine Stöckelschuhe an und bin bereit, Punkte zu verteilen!'
+                'Ich habe meine Stöckelschuhe an und bin bereit, Punkte zu verteilen!',
+                'Willkommen im glitzernden Vorhof der Peinlichkeit. Ich moderiere, ihr stolpert.',
+                'Drei Menschen, ein Puzzle und erschreckend wenig Vorbereitung. Fernsehen, wie ich es liebe.',
+                'Die Scheinwerfer brennen und eure Chancen verdampfen schon beim Warmwerden.',
+                'Lasst uns gemeinsam herausfinden, wer heute intellektuell nur Dekoration ist.'
             ],
             spin: [
                 'Wirbeln wir das Rad, Schätzchen!',
@@ -296,7 +428,10 @@
                 'Dreh es, als gäbe es kein Morgen, Liebling!',
                 'Rrrrrund geht es! Wer braucht schon Fitnessstudio, wenn man so ein Showrad hat?',
                 'Oh, spannend! Mein Puls rast... nicht wirklich, aber ich tu mal so.',
-                'Gib alles! Das Ding klemmt nicht, Darling.'
+                'Gib alles! Das Ding klemmt nicht, Darling.',
+                'Dreh kräftig, vielleicht hilft Bewegung ja dem Denkvermögen.',
+                'Einmal ordentlich schubsen. Eleganz ist hier ohnehin längst ausverkauft.',
+                'Das Rad dreht sich schneller als eure letzten drei Gehirnzellen.'
             ],
             bankrupt: [
                 'Aua! Das tut weh. Bankrott, Liebling. Alles ist weg!',
@@ -304,14 +439,20 @@
                 'Pleite! Tja, vom Tellerwäscher zum... Tellerwäscher.',
                 'Tschüss Kohle! Ein tragischer Moment für die Fernsehgeschichte.',
                 'Bankrott! Das ist die Strafe des Universums. Nächster bitte!',
-                'Das war\'s mit dem Luxusurlaub. Alles auf Null, Schätzchen.'
+                'Das war\'s mit dem Luxusurlaub. Alles auf Null, Schätzchen.',
+                'Ein finanzieller Totalschaden. So klingt Armut in Stereo.',
+                'Herrlich, das Konto flattert leerer als eure Hoffnung.',
+                'Das Geld ist tot. Wir halten keine Schweigeminute.'
             ],
             skip: [
                 'Zwangspause! Zeit für mich, meinen Lippenstift nachzuziehen.',
                 'Aussetzen. Das Schicksal will dich heute einfach nicht reden hören.',
                 'Der Nächste bitte! Du darfst jetzt schweigend gut aussehen.',
                 'Pech gehabt, Liebling. Setz dich und entspann dich eine Runde.',
-                'Einmal aussetzen. Ist vielleicht besser so für uns alle.'
+                'Einmal aussetzen. Ist vielleicht besser so für uns alle.',
+                'Das Universum hat entschieden: heute bitte weniger von dir.',
+                'Ein Zug weniger, aber Kopf hoch. Blamieren kann man sich auch im Sitzen.',
+                'Pause für dich, Erholung für mein Nervensystem.'
             ],
             guess_c: [
                 'Großartig! Welchen Konsonanten darf ich dir servieren?',
@@ -319,14 +460,20 @@
                 'Ein hübsches Sümmchen! Welcher Konsonant soll es sein, Liebling?',
                 'Gut gemacht. Nun verrate mir deinen Wunsch-Konsonanten.',
                 'Ich höre? Bitte etwas, das auch in diesem Rätsel vorkommt.',
-                'K, L, M, N? Mach es spannend, Schätzchen!'
+                'K, L, M, N? Mach es spannend, Schätzchen!',
+                'Wähle klug. Oder zumindest unterhaltsam falsch.',
+                'Jetzt bitte ein Konsonant, der nicht nach Unfall aussieht.',
+                'Servier mir einen Buchstaben mit Haltung, nicht mit Hilfeschrei.'
             ],
             guess_v: [
                 'Wer Geld hat, kauft Vokale. Welchen möchtest du?',
                 '250 Euro für einen läppischen Vokal. Wie dekadent. Welcher?',
                 'Ah, ein Shopping-Ausflug im Alphabet. A, E, I, O oder U?',
                 'Gekauft! Welchen Vokal darf meine Tafel-Fee aufdecken?',
-                'Gute Wahl. Vokale sind das Salz in der Suppe. Welchen nehmen wir?'
+                'Gute Wahl. Vokale sind das Salz in der Suppe. Welchen nehmen wir?',
+                'Wie luxuriös. Ein Vokal für Menschen mit Restbudget und Restwürde.',
+                'Nur zu, kauf dir ein Stück Lautsprache.',
+                'Welcher Vokal darf heute die Autopsie dieses Rätsels beschleunigen?'
             ],
             correct: [
                 'Fabelhaft! Völlig richtig.',
@@ -334,7 +481,10 @@
                 'Ist das zu fassen? Das war tatsächlich richtig!',
                 'Bravo! Ich hätte das ja nicht erwartet.',
                 'Exzellent geraten, mein Schatz.',
-                'Richtig! Das Glück ist heute mit den Ahnungslosen.'
+                'Richtig! Das Glück ist heute mit den Ahnungslosen.',
+                'Ein Treffer. Ich bin gerührt und leicht irritiert.',
+                'Sieh an, plötzlich flackert Kompetenz auf.',
+                'Nicht schlecht. Fast so, als hättest du heimlich geübt.'
             ],
             wrong: [
                 'Oh nein, Liebling. Das war ein Griff ins Klo.',
@@ -342,50 +492,75 @@
                 'Falsch! Hast du dir das Rätsel eigentlich mal angesehen?',
                 'Tragisch. Einfach nur tragisch. Der Nächste bitte.',
                 'Nein, nein, nein. Das war ein Schuss in den Ofen, Schätzchen.',
-                'Leider falsch. Zeit für einen Spielerwechsel.'
+                'Leider falsch. Zeit für einen Spielerwechsel.',
+                'Das war keine Antwort, das war ein Tatort.',
+                'Mutig geraten, unerquicklich gelandet.',
+                'Nicht mal knapp. Das war schon fast Performance-Kunst.',
+                'Das Rätsel hat dich angesehen und direkt die Polizei gerufen.'
             ],
             solve_prompt: [
                 'Mutig! Du willst lösen? Dann spuck\'s aus!',
                 'Die Stunde der Wahrheit! Was steht da an meiner wunderschönen Wand?',
                 'Alles oder nichts, Darling. Tipp die Lösung ein!',
                 'Ich bin gespannt wie ein Flitzebogen. Löse es!',
-                'Oh, ein Genie unter uns! Dann zeig mal, was du weißt.'
+                'Oh, ein Genie unter uns! Dann zeig mal, was du weißt.',
+                'Jetzt wird es entweder brillant oder forensisch interessant.',
+                'Lösen ist erlaubt. Scheitern allerdings ebenso.',
+                'Dann los. Schreib etwas, das man nicht später wegerklären muss.'
             ],
             solve_fail: [
                 'Das war... kreativ. Aber leider komplett falsch.',
                 'Da war der Wunsch Vater des Gedankens. Völlig daneben, Liebling.',
                 'Nein! Ich fasse es nicht. So nah und doch so fern.',
                 'Peinlich, peinlich. Bitte setz dich wieder.',
-                'Falsch! Das kostet dich deinen Zug. Wie ärgerlich.'
+                'Falsch! Das kostet dich deinen Zug. Wie ärgerlich.',
+                'Das war keine Lösung, das war ein Hilferuf in Großbuchstaben.',
+                'Ich wollte Drama, nicht dieses Verbrechen am Alphabet.',
+                'Schade. Das Publikum ist verwirrt, ich bin entzückt.'
             ],
             win: [
                 'Sensationell! Es ist gelöst! Applaus, Applaus!',
                 'Wahnsinn! Wir haben die Lösung. Fühl dich gedrückt, Liebling!',
                 'Exzellent! Das war ja oscarreif gelöst.',
                 'Richtig! Ich wusste, in dir steckt ein kleines Genie.',
-                'Trommelwirbel! Das ist die absolut korrekte Lösung!'
+                'Trommelwirbel! Das ist die absolut korrekte Lösung!',
+                'Gelöst. Irgendwo weint ein Rätselautor vor Erleichterung.',
+                'Ein seltener Moment: jemand liefert tatsächlich ab.',
+                'Bravo. Das war so sauber, fast unverdient.'
             ],
             score_announce: [
                 'Schauen wir auf die Konten: Wer hat hier das Sagen?',
                 'Geld regiert die Welt. Lass uns die Punkte checken, Darling.',
-                'Zeit für Kassensturz! Wer kann sich heute die dicken Preise leisten?'
+                'Zeit für Kassensturz! Wer kann sich heute die dicken Preise leisten?',
+                'Zahlen lügen nicht, aber sie können sehr verletzend sein.',
+                'Lasst uns sehen, wer hier reich und wer nur laut war.',
+                'Jetzt wird abgerechnet, ganz ohne Trostpflaster.'
             ],
             shop_inter: [
                 'Gewinner der Runde, du darfst in meinen Boutique-Shop! Kaufen oder sparen für die nächste Runde?',
                 'Du hast Geld erspielt! Willst du es jetzt verprassen oder für das große Finale aufheben?',
                 'Willkommen im Zwischen-Shop, Darling. Gönnst du dir was, oder sparst du eisern?',
-                'Zeit ist Geld, aber Zeug ist cooler. Kaufen oder sparen, Liebling?'
+                'Zeit ist Geld, aber Zeug ist cooler. Kaufen oder sparen, Liebling?',
+                'Willkommen im Konsumtempel. Vernunft bleibt bitte an der Garderobe.',
+                'Jetzt darfst du Geld in Dinge tauschen, die später Staub ansetzen.',
+                'Shopping heilt keine Wunden, aber es glitzert nett.'
             ],
             shop_finale: [
                 'DAS GROSSE FINALE! Zeit, die Millionen für absoluten Luxus rauszuhauen!',
                 'Es ist vorbei! Willkommen im VIP-Showroom. Kauf mir den Laden leer, Schätzchen!',
-                'Du bist der Champion! Hier sind die Hauptgewinne. Gönn dir!'
+                'Du bist der Champion! Hier sind die Hauptgewinne. Gönn dir!',
+                'Finale. Jetzt bitte mit Stil eskalieren.',
+                'Das ist der Moment, in dem schlechte finanzielle Entscheidungen majestätisch aussehen.',
+                'Heute wird nicht gespart. Heute wird geprahlt.'
             ],
             new_round: [
                 'Neue Runde, neues Glück und neue Chancen auf kolossale Peinlichkeiten.',
                 'Wir drehen weiter! Frische Runde, frisches Drama.',
                 'Runde weiter, Lippen glänzen, Nerven blank. Ich liebe Fernsehen.',
-                'Zurück ans Brett, meine Lieben. Das Chaos geht weiter.'
+                'Zurück ans Brett, meine Lieben. Das Chaos geht weiter.',
+                'Nächste Runde. Bitte diesmal mit etwas weniger Katastrophe, nur aus Neugier.',
+                'Wir machen weiter, weil Weglaufen noch peinlicher wäre.',
+                'Neue Chance, derselbe Mangel an Würde. Herrlich.'
             ]
         };
 
@@ -593,7 +768,7 @@
         }
 
         function modeLabel(mode) {
-            if (mode === 'cpu') return 'Solo vs CPU';
+            if (mode === 'cpu') return 'Solo vs 2 CPU';
             if (mode === 'online') return 'Online';
             return 'Lokal';
         }
@@ -602,6 +777,7 @@
             if (session.canControlAll) return 'Regie';
             if (session.slotIndex === 0) return 'Spieler 1';
             if (session.slotIndex === 1) return 'Spieler 2';
+            if (session.slotIndex === 2) return 'Spieler 3';
             if (session.roomFull) return 'Raum voll';
             return 'Nicht beigetreten';
         }
@@ -669,7 +845,10 @@
             document.getElementById('p1-label').innerText = isOnline ? 'Dein Name' : 'Name Spieler 1';
             document.getElementById('p2-label').innerText = isCpu ? 'Name CPU Gegner' : 'Name Spieler 2';
             document.getElementById('p2-input').placeholder = isCpu ? 'CPU Klaus 3000' : 'Spieler 2';
+            document.getElementById('p3-label').innerText = isCpu ? 'Name CPU Gegner 2' : 'Name Spieler 3';
+            document.getElementById('p3-input').placeholder = isCpu ? 'CPU Brigitte Bot' : 'Spieler 3';
             document.getElementById('p2-wrapper').classList.toggle('hidden', isOnline);
+            document.getElementById('p3-wrapper').classList.toggle('hidden', isOnline);
             document.getElementById('online-slots').classList.toggle('hidden', !isOnline);
             document.getElementById('local-actions').classList.toggle('hidden', isOnline);
             document.getElementById('online-actions').classList.toggle('hidden', !isOnline);
@@ -681,7 +860,8 @@
             emitToServer('configure_local_game', {
                 mode,
                 player1Name: document.getElementById('p1-input').value,
-                player2Name: document.getElementById('p2-input').value
+                player2Name: document.getElementById('p2-input').value,
+                player3Name: document.getElementById('p3-input').value
             });
         }
 
@@ -777,26 +957,51 @@
             const board = document.getElementById('board');
             board.innerHTML = '';
             const guessed = new Set(gameState.guessedLetters || []);
+            const currentRevealedPositions = new Set();
 
+            if (gameState.currentPuzzleText !== lastPuzzleText) {
+                lastRevealedPositions = new Set();
+                lastPuzzleText = gameState.currentPuzzleText;
+            }
+
+            let absoluteIndex = 0;
             gameState.currentPuzzleText.split(' ').forEach((word) => {
                 const wordContainer = document.createElement('div');
-                wordContainer.className = 'flex gap-1 md:gap-2';
+                wordContainer.className = 'board-word';
 
                 for (const char of word) {
+                    const tileKey = `${absoluteIndex}-${char}`;
                     const tile = document.createElement('div');
-                    tile.className = 'w-8 h-12 md:w-12 md:h-16 flex items-center justify-center text-xl md:text-3xl font-bold rounded border bg-white text-black border-gray-300 transition-all';
+                    tile.className = 'board-slot';
                     const shouldReveal = !alphabet.includes(char) || guessed.has(char);
+                    const isLetter = alphabet.includes(char);
+                    const isNewReveal = isLetter && shouldReveal && !lastRevealedPositions.has(tileKey);
 
                     if (shouldReveal) {
-                        tile.innerText = char;
-                        tile.classList.add('animate-[pulse_0.3s_ease-in-out]');
+                        currentRevealedPositions.add(tileKey);
+                        tile.innerHTML = `
+                            <div class="board-disc board-disc-revealed ${isNewReveal ? 'board-disc-new' : ''}">
+                                <div class="board-disc-face board-disc-front"></div>
+                                <div class="board-disc-face board-disc-back text-xl md:text-3xl">${char}</div>
+                            </div>
+                        `;
                     } else {
-                        tile.classList.add('bg-indigo-200');
+                        tile.innerHTML = `
+                            <div class="board-disc">
+                                <div class="board-disc-face board-disc-front"></div>
+                                <div class="board-disc-face board-disc-back text-xl md:text-3xl"></div>
+                            </div>
+                        `;
                     }
                     wordContainer.appendChild(tile);
+                    absoluteIndex += 1;
                 }
+
+                absoluteIndex += 1;
                 board.appendChild(wordContainer);
             });
+
+            lastRevealedPositions = currentRevealedPositions;
         }
 
         function renderKeyboard() {
@@ -844,26 +1049,27 @@
         }
 
         function renderPlayerCards() {
-            const p1 = gameState.players[0];
-            const p2 = gameState.players[1];
+            const accentMap = [
+                { border: 'border-blue-400/70', text: 'text-blue-300', badge: 'bg-blue-500/20 text-blue-200', activeBg: 'bg-blue-600/50', activeShadow: 'shadow-[0_0_20px_rgba(59,130,246,0.6)]' },
+                { border: 'border-red-400/70', text: 'text-red-300', badge: 'bg-red-500/20 text-red-200', activeBg: 'bg-red-600/50', activeShadow: 'shadow-[0_0_20px_rgba(239,68,68,0.6)]' },
+                { border: 'border-emerald-400/70', text: 'text-emerald-300', badge: 'bg-emerald-500/20 text-emerald-200', activeBg: 'bg-emerald-600/50', activeShadow: 'shadow-[0_0_20px_rgba(16,185,129,0.55)]' }
+            ];
 
-            document.getElementById('p1-name').innerText = p1.name;
-            document.getElementById('p2-name').innerText = p2.name;
-            document.getElementById('p1-score').innerText = `${p1.score} €`;
-            document.getElementById('p2-score').innerText = `${p2.score} €`;
-            document.getElementById('p1-badge').innerText = p1.isCPU ? 'CPU' : (p1.connected ? 'LIVE' : 'WEG');
-            document.getElementById('p2-badge').innerText = p2.isCPU ? 'CPU' : (p2.connected ? 'LIVE' : 'WEG');
+            gameState.players.forEach((player, index) => {
+                const accent = accentMap[index] || accentMap[0];
+                document.getElementById(`p${index + 1}-name`).innerText = player.name;
+                document.getElementById(`p${index + 1}-score`).innerText = `${player.score} €`;
+                document.getElementById(`p${index + 1}-badge`).innerText = player.isCPU ? 'CPU' : (player.connected ? 'LIVE' : 'WEG');
 
-            const p1Card = document.getElementById('p1-card');
-            const p2Card = document.getElementById('p2-card');
-
-            if (gameState.currentPlayer === 0) {
-                p1Card.className = 'bg-blue-600/50 border-2 border-blue-400 rounded-xl p-3 w-full max-w-[260px] text-center transform scale-105 shadow-[0_0_20px_rgba(59,130,246,0.6)] z-10 transition-all';
-                p2Card.className = 'bg-gray-800 border-2 border-gray-600 rounded-xl p-3 w-full max-w-[260px] text-center opacity-50 transform scale-95 transition-all';
-            } else {
-                p2Card.className = 'bg-red-600/50 border-2 border-red-400 rounded-xl p-3 w-full max-w-[260px] text-center transform scale-105 shadow-[0_0_20px_rgba(239,68,68,0.6)] z-10 transition-all';
-                p1Card.className = 'bg-gray-800 border-2 border-gray-600 rounded-xl p-3 w-full max-w-[260px] text-center opacity-50 transform scale-95 transition-all';
-            }
+                const card = document.getElementById(`p${index + 1}-card`);
+                const isActive = gameState.currentPlayer === index;
+                card.className = [
+                    'game-panel border-2 rounded-[22px] p-4 w-full max-w-[260px] text-center transition-all duration-300',
+                    isActive
+                        ? `${accent.border} ${accent.activeBg} ${accent.activeShadow} scale-105`
+                        : `${accent.border.replace('/70', '/35')} opacity-65 scale-95`
+                ].join(' ');
+            });
         }
 
         function renderActionState() {
@@ -897,6 +1103,30 @@
             }
         }
 
+        function resetClientRoundArtifacts() {
+            const solveInput = document.getElementById('solve-input');
+            const currentPhase = gameState?.phase ?? null;
+            const phaseChanged = currentPhase !== lastRenderedPhase;
+
+            if (solveInput && phaseChanged) {
+                solveInput.value = '';
+            }
+
+            if (currentPhase === 'setup') {
+                lastWheelRotation = 0;
+                lastPuzzleText = '';
+                lastRevealedPositions = new Set();
+                const wheel = document.getElementById('wheel-container');
+                if (wheel) {
+                    wheel.style.transform = 'rotate(0deg)';
+                }
+                spinTickTimers.forEach((timer) => clearTimeout(timer));
+                spinTickTimers = [];
+            }
+
+            lastRenderedPhase = currentPhase;
+        }
+
         function renderSetup() {
             const select = document.getElementById('mode-select');
             const onlineClaimed = gameState.mode === 'online' && gameState.players.some((player) => player.connected || player.name !== `Spieler ${player.slot + 1}`);
@@ -907,9 +1137,10 @@
 
             document.getElementById('slot-player-1').innerText = gameState.players[0].connected ? gameState.players[0].name : 'Frei';
             document.getElementById('slot-player-2').innerText = gameState.players[1].connected ? gameState.players[1].name : 'Frei';
-            document.getElementById('online-room-info').innerText = gameState.onlineSlotsTaken >= 2
+            document.getElementById('slot-player-3').innerText = gameState.players[2].connected ? gameState.players[2].name : 'Frei';
+            document.getElementById('online-room-info').innerText = gameState.onlineSlotsTaken >= 3
                 ? 'Raum voll. Keine Zuschauerplaetze.'
-                : `Noch ${2 - gameState.onlineSlotsTaken} Slot(s) frei.`;
+                : `Noch ${3 - gameState.onlineSlotsTaken} Slot(s) frei.`;
             document.getElementById('session-role').innerText = `DEINE ROLLE: ${roleLabel()}`;
             updateBootstrapError();
 
@@ -918,16 +1149,16 @@
                 if (session.roomFull) {
                     statusText = 'Der Online-Raum ist bereits voll. Dieses Spiel erlaubt bewusst keine Zuschauer.';
                 } else if (gameState.onlineReady && session.slotIndex === 0) {
-                    statusText = 'Beide Online-Spieler stehen bereit. Spieler 1 darf die Show jetzt starten.';
+                    statusText = 'Alle drei Online-Spieler stehen bereit. Spieler 1 darf die Show jetzt starten.';
                 } else if (gameState.onlineReady) {
                     statusText = 'Die Besetzung ist komplett. Jetzt wartet alles auf den Startknopf von Spieler 1.';
                 } else {
-                    statusText = 'Online-Lobby offen: genau zwei Spieler, keine Zuschauer.';
+                    statusText = 'Online-Lobby offen: genau drei Spieler, keine Zuschauer.';
                 }
             } else if (gameState.mode === 'cpu') {
-                statusText = 'Solo gegen CPU: Du steuerst lokal die menschliche Seite, der Server übernimmt den Bot.';
+                statusText = 'Solo gegen CPU: Du steuerst lokal die menschliche Seite, der Server übernimmt zwei bissige Bots.';
             } else if (gameState.mode === 'local') {
-                statusText = 'Lokal zu zweit: ein Gerät, zwei Kandidaten, maximaler Trash-TV-Schaden.';
+                statusText = 'Lokal zu dritt: ein Gerät, drei Kandidaten, maximaler Trash-TV-Schaden.';
             }
             document.getElementById('setup-status').innerText = statusText;
 
@@ -942,7 +1173,8 @@
             document.getElementById('category-display').innerText = `KATEGORIE: ${gameState.currentCategory}`;
             document.getElementById('mode-display').innerText = modeLabel(gameState.mode);
             document.getElementById('role-display').innerText = roleLabel();
-            document.getElementById('live-spectators').innerText = gameState.mode === 'online' ? Math.max(0, 2 - gameState.onlineSlotsTaken) : 0;
+            document.getElementById('solve-bonus-display').innerText = gameState.solveBonus ?? 1000;
+            document.getElementById('live-spectators').innerText = gameState.mode === 'online' ? Math.max(0, 3 - gameState.onlineSlotsTaken) : 0;
 
             buildWheel();
             renderPlayerCards();
@@ -1024,6 +1256,7 @@
 
         function renderAll() {
             if (!gameState) return;
+            resetClientRoundArtifacts();
             renderSetup();
             toggleScreens();
             if (gameState.phase !== 'setup' && gameState.phase !== 'shop') {
@@ -1047,6 +1280,17 @@
             socket = window.io();
             bootstrapError = '';
             updateBootstrapError();
+
+            socket.on('connect', () => {
+                bootstrapError = '';
+                updateBootstrapError();
+                socket.emit('register_client', { clientKey });
+            });
+
+            socket.on('disconnect', () => {
+                bootstrapError = 'Verbindung zur Show kurz verloren. Socket.io versucht automatisch, dich wieder einzusammeln.';
+                updateBootstrapError();
+            });
 
             socket.on('session_info', (info) => {
                 session = info;
