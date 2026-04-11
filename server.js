@@ -7,6 +7,8 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 const PORT = process.env.PORT || 3000;
+const PLAYER_COUNT = 3;
+const SOLVE_BONUS = 1000;
 
 const vowels = ["A", "E", "I", "O", "U", "Ä", "Ö", "Ü"];
 const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ".split("");
@@ -40,11 +42,25 @@ const allPrizes = [
   { id: 12, name: "Traumküche", price: 4000, img: "🍳", bought: false, isGrand: true },
   { id: 13, name: "Weltreise auf einem Kreuzfahrtschiff", price: 8000, img: "🚢", bought: false, isGrand: true },
   { id: 14, name: "Ein eigenes kleines Haus", price: 15000, img: "🏡", bought: false, isGrand: true },
-  { id: 15, name: "Helikopter-Rundflug", price: 2500, img: "🚁", bought: false, isGrand: true }
+  { id: 15, name: "Helikopter-Rundflug", price: 2500, img: "🚁", bought: false, isGrand: true },
+  { id: 16, name: "Kofferset 'Jet Glamour'", price: 950, img: "🧳", bought: false, isGrand: false },
+  { id: 17, name: "Heimtrainer mit Motivationsmangel", price: 1100, img: "🚴", bought: false, isGrand: false },
+  { id: 18, name: "Mikrowelle Deluxe", price: 550, img: "📡", bought: false, isGrand: false },
+  { id: 19, name: "Camcorder fuer Familienpeinlichkeiten", price: 900, img: "📹", bought: false, isGrand: false },
+  { id: 20, name: "Kaffeemaschine 'Turbo Bohne'", price: 700, img: "☕", bought: false, isGrand: false },
+  { id: 21, name: "Massagesessel in Kunstleder", price: 3200, img: "💺", bought: false, isGrand: true },
+  { id: 22, name: "Whirlpool fuer den Wintergarten", price: 6200, img: "🛁", bought: false, isGrand: true },
+  { id: 23, name: "Elektrischer Kleinwagen", price: 9000, img: "🚗", bought: false, isGrand: true },
+  { id: 24, name: "Designer Kofferset fuer Weltflucht", price: 2800, img: "🎒", bought: false, isGrand: true },
+  { id: 25, name: "Luxus Heimtrainer mit Displaywand", price: 4700, img: "🏋️", bought: false, isGrand: true },
+  { id: 26, name: "Stereoanlage mit viel zu viel Bass", price: 850, img: "📻", bought: false, isGrand: false },
+  { id: 27, name: "Ledercouch in ehrlichem Beige", price: 1400, img: "🛋️", bought: false, isGrand: false },
+  { id: 28, name: "Waschmaschine 'Schleuderstar'", price: 980, img: "🧺", bought: false, isGrand: false },
+  { id: 29, name: "Wellnesswochenende mit Bademantelpflicht", price: 3600, img: "🧖", bought: false, isGrand: true },
+  { id: 30, name: "Wintergarten fuer Zimmerpflanzen mit Machtfantasien", price: 7100, img: "🌴", bought: false, isGrand: true }
 ];
 
 const puzzleDatabase = [
-  { category: "TV ZITAT", text: "HARRY HOL SCHON MAL DEN WAGEN" },
   { category: "TV ZITAT", text: "GEH AUFS GANZE ODER NIMM DEN ZONK" },
   { category: "TV ZITAT", text: "GUTEN ABEND MEINE DAMEN UND HERREN" },
   { category: "TV SHOW", text: "WETTEN DASS" },
@@ -80,7 +96,71 @@ const puzzleDatabase = [
   { category: "ANMACHSPRUCH", text: "KANNST DU SCHWIMMEN ICH ERTRINKE IN DEINEN AUGEN" },
   { category: "TIERE", text: "DER GEMEINE STUBENTIGER" },
   { category: "BERUFE", text: "ZITRONENFALTER" },
-  { category: "HOBBY", text: "EXTREMBUEGELN" }
+  { category: "HOBBY", text: "EXTREMBUEGELN" },
+  { category: "TV ZITAT", text: "DAS IST SPITZE" },
+  { category: "TV ZITAT", text: "ICH HABE HEUTE LEIDER KEIN FOTO FUER DICH" },
+  { category: "TV SHOW", text: "DIE 100000 MARK SHOW" },
+  { category: "TV SHOW", text: "RANSLM" },
+  { category: "TV SHOW", text: "WER WIRD MILLIONAER" },
+  { category: "FILMTITEL", text: "DIE NACKTE KANONE" },
+  { category: "FILMTITEL", text: "EIN FISCH NAMENS WANDA" },
+  { category: "FILMTITEL", text: "JENSEITS VON AFRIKA" },
+  { category: "FILMTITEL", text: "GHOSTBUSTERS DIE GEISTERJAEGER" },
+  { category: "FILMTITEL", text: "DREI HASELNUESSE FUER ASCHENBROEDEL" },
+  { category: "ALLTAG", text: "DER MUELL MUSS NOCH RUNTER" },
+  { category: "ALLTAG", text: "WER HAT DAS LETZTE KLOPAPIER GENOMMEN" },
+  { category: "ALLTAG", text: "MACH MAL DAS FENSTER ZU ES ZIEHT" },
+  { category: "ALLTAG", text: "ICH DACHTE DAS WAERE IM ANGEBOT" },
+  { category: "ALLTAG", text: "NUR KURZ HINLEGEN UND PLOETZLICH IST MONTAG" },
+  { category: "SPRICHWORT", text: "EINEM GESCHENKTEN GAUL SCHAUT MAN NICHT INS MAUL" },
+  { category: "SPRICHWORT", text: "VIELE KOECHER VERDERBEN DEN BREI" },
+  { category: "SPRICHWORT", text: "WER ZULETZT LACHT LACHT AM BESTEN" },
+  { category: "SPRICHWORT", text: "AUS DEN AUGEN AUS DEM SINN" },
+  { category: "SPRICHWORT", text: "KLEINVIEH MACHT AUCH MIST" },
+  { category: "REDEWENDUNG", text: "JETZT IST ABER POLEN OFFEN" },
+  { category: "REDEWENDUNG", text: "DA BEISST DIE MAUS KEINEN FADEN AB" },
+  { category: "REDEWENDUNG", text: "DEN BOGEN UEBERSPANNEN" },
+  { category: "REDEWENDUNG", text: "AUF KEINEN GRUENEN ZWEIG KOMMEN" },
+  { category: "REDEWENDUNG", text: "ICH FALL VOM GLAUBEN AB" },
+  { category: "ESSEN", text: "MANTAPLATTE MIT EXTRA MAYO" },
+  { category: "ESSEN", text: "KARTOFFELSALAT OHNE DISKUSSION" },
+  { category: "ESSEN", text: "CURRYWURST UM DREI UHR NACHTS" },
+  { category: "ESSEN", text: "MILCHREIS MIT ZIMT UND ZUCKER" },
+  { category: "ESSEN", text: "SCHNITZEL MIT POMMES ROT WEISS" },
+  { category: "KULINARIK", text: "DER SALAT WAR NUR Deko" },
+  { category: "PARTY", text: "DER DJ SPIELT SCHON WIEDER ABBA" },
+  { category: "PARTY", text: "NOCH EIN KURZER FUER DEN WEG" },
+  { category: "PARTY", text: "DAS WAR GARANTIERT DER LETZTE SHOT" },
+  { category: "GETRAENKE", text: "KORN MIT FANTA" },
+  { category: "GETRAENKE", text: "COLAWEIZEN ZUM FRUEHSTUECK" },
+  { category: "GETRAENKE", text: "FILTERKAFFEE AUS DER THERMO KANNE" },
+  { category: "BELEIDIGUNG", text: "DU HAST AUCH NUR EIN PRAKTIKUM IM HIRN GEMACHT" },
+  { category: "BELEIDIGUNG", text: "DEIN AUFTRITT WAR EIN VERBRECHEN OHNE MOTIV" },
+  { category: "BELEIDIGUNG", text: "NICHT DIE HELLSTE KERZE AUF DER TORTE" },
+  { category: "ANMACHSPRUCH", text: "DEINE AUGEN FUNKELN WIE EINE TANKSTELLE BEI NACHT" },
+  { category: "ANMACHSPRUCH", text: "BIST DU WIFI ICH SPUERE EINE VERBINDUNG" },
+  { category: "BERUFE", text: "FENSTERPUTZER IM HOCHHAUS" },
+  { category: "BERUFE", text: "NAGELSTUDIO KOENIGIN" },
+  { category: "BERUFE", text: "NACHTPORTIER MIT GEHEIMNISSEN" },
+  { category: "HOBBY", text: "KARAOKE MIT VIEL ZU VIEL EHRGEIZ" },
+  { category: "HOBBY", text: "ANGELN IM REGEN" },
+  { category: "HOBBY", text: "TUPPERDOSEN SORTIEREN" },
+  { category: "KURIOS", text: "DAS INTERNET WAR MAL NEULAND" },
+  { category: "KURIOS", text: "EINMAL MIT PROFIS ARBEITEN" },
+  { category: "KURIOS", text: "VERTRAU MIR ICH HABE DAS AUF YOUTUBE GESEHEN" },
+  { category: "LEBENSMOTTO", text: "WENN SCHON PEINLICH DANN MIT HALTUNG" },
+  { category: "LEBENSMOTTO", text: "HEUTE CHAOS MORGEN AUSSCHLAFEN" },
+  { category: "WEISHEIT", text: "WER NICHTS ERWARTET WIRD WENIGSTENS NICHT ENTTAEUSCHT" },
+  { category: "WEISHEIT", text: "DAS LEBEN IST KEIN WUNSCHKONZERT ABER MANCHMAL EINE SCHLAGERPARADE" },
+  { category: "TIERE", text: "DIE MAJESTAETISCHE TIEFKUEHLEULE" },
+  { category: "TIERE", text: "DER UEBERFORDERTE GOLDHAMSTER" },
+  { category: "TV SHOW", text: "FAMILIENDUELL IM STUDIO" },
+  { category: "ALLTAG", text: "DAS PASSWORT STEHT AUF EINEM POST IT" },
+  { category: "SPRICHWORT", text: "WER DEN PFENNIG NICHT EHRT IST DES TALERS NICHT WERT" },
+  { category: "ESSEN", text: "KAESELAUCHSUPPE FUER ALLE" },
+  { category: "KURIOS", text: "DAS HAT SO IN DER FACEBOOK GRUPPE GESTANDEN" },
+  { category: "HOBBY", text: "MINIGOLF MIT GROSSER GESTE" },
+  { category: "BERUFE", text: "REISEBUERO CHEF OHNE URLAUB" }
 ];
 
 function clonePrizes() {
@@ -113,6 +193,7 @@ function createInitialState() {
     currentSpinValue: 0,
     wheelRotation: 0,
     winnerIndex: null,
+    solveBonus: SOLVE_BONUS,
     wheelSegments,
     shopItems: clonePrizes(),
     shop: {
@@ -120,7 +201,7 @@ function createInitialState() {
       isFinale: false,
       buyerIndex: null
     },
-    players: [createPlayer(0), createPlayer(1)],
+    players: Array.from({ length: PLAYER_COUNT }, (_value, index) => createPlayer(index)),
     hostSocketId: null
   };
 }
@@ -128,6 +209,9 @@ function createInitialState() {
 let gameState = createInitialState();
 let availablePuzzleIndices = [];
 const scheduledTimers = new Set();
+const socketClientKeys = new Map();
+let hostClientKey = null;
+let emptyRoomResetTimer = null;
 
 function schedule(fn, delay) {
   const timer = setTimeout(() => {
@@ -143,6 +227,13 @@ function clearScheduledTimers() {
     clearTimeout(timer);
   }
   scheduledTimers.clear();
+}
+
+function clearEmptyRoomResetTimer() {
+  if (emptyRoomResetTimer) {
+    clearTimeout(emptyRoomResetTimer);
+    emptyRoomResetTimer = null;
+  }
 }
 
 function randomInt(max) {
@@ -184,6 +275,10 @@ function drawPuzzle() {
 
 function getConnectedSocketIds() {
   return [...io.of("/").sockets.keys()];
+}
+
+function getClientKeyBySocket(socketId) {
+  return socketClientKeys.get(socketId) || null;
 }
 
 function ensureHostAssignment(preferredSocketId = null) {
@@ -228,6 +323,7 @@ function buildPublicState() {
     currentSpinValue: gameState.currentSpinValue,
     wheelRotation: gameState.wheelRotation,
     winnerIndex: gameState.winnerIndex,
+    solveBonus: gameState.solveBonus,
     wheelSegments: gameState.wheelSegments,
     shopItems: gameState.shopItems.map((item) => ({ ...item })),
     shop: { ...gameState.shop },
@@ -422,13 +518,17 @@ function finishSolvedRound() {
   gameState.phase = "solved";
   gameState.currentSpinValue = 0;
   gameState.winnerIndex = gameState.currentPlayer;
+  gameState.players[gameState.currentPlayer].score += SOLVE_BONUS;
   syncAllClients();
   emitModerator("win");
+  schedule(() => {
+    emitModerator(null, `${gameState.players[gameState.currentPlayer].name} kassiert noch ${SOLVE_BONUS} Euro Loesungsbonus. Glamour zahlt sich aus.`);
+  }, 500);
   emitSfx("fanfare");
 }
 
 function nextPlayer() {
-  gameState.currentPlayer = gameState.currentPlayer === 0 ? 1 : 0;
+  gameState.currentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
   gameState.phase = "action";
   gameState.currentSpinValue = 0;
   syncAllClients();
@@ -598,10 +698,12 @@ function handleSolveAttempt(attempt) {
 }
 
 function announceShopOpen(isFinale) {
-  const [playerOne, playerTwo] = gameState.players;
+  const scoreLine = gameState.players
+    .map((player) => `${player.name} steht bei ${player.score} Euro`)
+    .join(". ");
   emitModerator("score_announce");
   schedule(() => {
-    emitModerator(null, `${playerOne.name} steht bei ${playerOne.score} Euro. ${playerTwo.name} hat ${playerTwo.score} Euro.`);
+    emitModerator(null, `${scoreLine}.`);
   }, 2400);
   schedule(() => {
     emitModerator(isFinale ? "shop_finale" : "shop_inter");
@@ -612,7 +714,9 @@ function openShopPhase() {
   clearScheduledTimers();
   const isFinale = gameState.round >= gameState.maxRounds;
   if (isFinale) {
-    gameState.winnerIndex = gameState.players[0].score >= gameState.players[1].score ? 0 : 1;
+    gameState.winnerIndex = gameState.players.reduce((bestIndex, player, index, players) => {
+      return player.score > players[bestIndex].score ? index : bestIndex;
+    }, 0);
   }
 
   gameState.shop = {
@@ -657,11 +761,12 @@ function continueFromShop() {
 
   clearScheduledTimers();
   gameState.round += 1;
-  gameState.roundStarter = gameState.roundStarter === 0 ? 1 : 0;
+  gameState.roundStarter = (gameState.roundStarter + 1) % gameState.players.length;
   gameState.currentPlayer = gameState.roundStarter;
   gameState.phase = "action";
   gameState.winnerIndex = null;
   gameState.currentSpinValue = 0;
+  gameState.solveBonus = SOLVE_BONUS;
   gameState.shop = {
     isOpen: false,
     isFinale: false,
@@ -792,6 +897,7 @@ function scheduleCpuShopIfNeeded() {
 
 function startConfiguredGame(mode) {
   clearScheduledTimers();
+  clearEmptyRoomResetTimer();
   gameState.mode = mode;
   gameState.phase = "action";
   gameState.round = 1;
@@ -801,6 +907,7 @@ function startConfiguredGame(mode) {
   gameState.currentSpinValue = 0;
   gameState.wheelRotation = 0;
   gameState.winnerIndex = null;
+  gameState.solveBonus = SOLVE_BONUS;
   gameState.shopItems = clonePrizes();
   gameState.shop = {
     isOpen: false,
@@ -815,8 +922,8 @@ function startConfiguredGame(mode) {
       player.connected = Boolean(player.socketId);
       return;
     }
-    player.connected = mode === "local" ? true : index === 0;
-    player.isCPU = mode === "cpu" && index === 1;
+    player.connected = true;
+    player.isCPU = mode === "cpu" && index > 0;
   });
   setNewPuzzle();
   syncAllClients();
@@ -829,6 +936,7 @@ function resetGame() {
   const connectedSocketIds = getConnectedSocketIds();
   const preferredHost = connectedSocketIds.includes(gameState.hostSocketId) ? gameState.hostSocketId : connectedSocketIds[0] || null;
   clearScheduledTimers();
+  clearEmptyRoomResetTimer();
   gameState = createInitialState();
   ensureHostAssignment(preferredHost);
   syncAllClients();
@@ -845,10 +953,30 @@ app.get("/", (_req, res) => {
 });
 
 io.on("connection", (socket) => {
+  clearEmptyRoomResetTimer();
   ensureHostAssignment(socket.id);
   emitSessionInfo(socket);
   broadcastState();
   refreshSessions();
+
+  socket.on("register_client", ({ clientKey } = {}) => {
+    const normalizedKey = String(clientKey || "").trim().slice(0, 120);
+    if (!normalizedKey) {
+      return;
+    }
+
+    socketClientKeys.set(socket.id, normalizedKey);
+
+    if ((gameState.mode === "local" || gameState.mode === "cpu") && hostClientKey === normalizedKey) {
+      gameState.hostSocketId = socket.id;
+      gameState.players[0].socketId = socket.id;
+      gameState.players[0].connected = true;
+      syncAllClients();
+      return;
+    }
+
+    emitSessionInfo(socket);
+  });
 
   socket.on("configure_local_game", (payload = {}) => {
     if (gameState.phase !== "setup" || socket.id !== gameState.hostSocketId) {
@@ -862,12 +990,20 @@ io.on("connection", (socket) => {
       payload.player2Name,
       mode === "cpu" ? "CPU Klaus 3000" : "Spieler 2"
     );
+    gameState.players[2].name = sanitizeName(
+      payload.player3Name,
+      mode === "cpu" ? "CPU Brigitte Bot" : "Spieler 3"
+    );
     gameState.players[0].socketId = socket.id;
     gameState.players[0].connected = true;
     gameState.players[0].isCPU = false;
     gameState.players[1].socketId = null;
-    gameState.players[1].connected = mode === "local";
+    gameState.players[1].connected = true;
     gameState.players[1].isCPU = mode === "cpu";
+    gameState.players[2].socketId = null;
+    gameState.players[2].connected = true;
+    gameState.players[2].isCPU = mode === "cpu";
+    hostClientKey = getClientKeyBySocket(socket.id) || hostClientKey;
     startConfiguredGame(mode);
   });
 
@@ -978,6 +1114,8 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
+    const disconnectedClientKey = getClientKeyBySocket(socket.id);
+    socketClientKeys.delete(socket.id);
     const playerIndex = getPlayerIndexBySocket(socket.id);
     if (playerIndex !== -1) {
       gameState.players[playerIndex].socketId = null;
@@ -985,9 +1123,21 @@ io.on("connection", (socket) => {
     }
 
     if (!io.of("/").sockets.size) {
-      clearScheduledTimers();
-      gameState = createInitialState();
+      clearEmptyRoomResetTimer();
+      emptyRoomResetTimer = setTimeout(() => {
+        if (!io.of("/").sockets.size) {
+          clearScheduledTimers();
+          gameState = createInitialState();
+          hostClientKey = null;
+          socketClientKeys.clear();
+        }
+        emptyRoomResetTimer = null;
+      }, 30000);
       return;
+    }
+
+    if ((gameState.mode === "local" || gameState.mode === "cpu") && disconnectedClientKey && disconnectedClientKey === hostClientKey) {
+      gameState.hostSocketId = null;
     }
 
     ensureHostAssignment();
