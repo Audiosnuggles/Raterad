@@ -7,7 +7,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 const PORT = process.env.PORT || 3000;
-const PLAYER_COUNT = 3;
+const MAX_PLAYER_COUNT = 3;
 const SOLVE_BONUS = 1000;
 
 const vowels = ["A", "E", "I", "O", "U", "Ä", "Ö", "Ü"];
@@ -182,6 +182,7 @@ function createPlayer(slot) {
 function createInitialState() {
   return {
     mode: null,
+    playerCount: 2,
     phase: "setup",
     round: 1,
     maxRounds: 3,
@@ -201,7 +202,7 @@ function createInitialState() {
       isFinale: false,
       buyerIndex: null
     },
-    players: Array.from({ length: PLAYER_COUNT }, (_value, index) => createPlayer(index)),
+    players: Array.from({ length: MAX_PLAYER_COUNT }, (_value, index) => createPlayer(index)),
     hostSocketId: null
   };
 }
@@ -281,8 +282,32 @@ function getClientKeyBySocket(socketId) {
   return socketClientKeys.get(socketId) || null;
 }
 
+function sanitizePlayerCount(value) {
+  return Number(value) === 3 ? 3 : 2;
+}
+
+function getActivePlayers() {
+  return gameState.players.slice(0, gameState.playerCount);
+}
+
+function getActivePlayerCount() {
+  return gameState.playerCount;
+}
+
 function ensureHostAssignment(preferredSocketId = null) {
   const connectedSocketIds = getConnectedSocketIds();
+  const isLocalGame = gameState.mode === "local" || gameState.mode === "cpu";
+
+  if (isLocalGame && hostClientKey) {
+    const matchingHostSocketId = connectedSocketIds.find((socketId) => getClientKeyBySocket(socketId) === hostClientKey);
+    if (matchingHostSocketId) {
+      gameState.hostSocketId = matchingHostSocketId;
+      return;
+    }
+    gameState.hostSocketId = null;
+    return;
+  }
+
   if (preferredSocketId && connectedSocketIds.includes(preferredSocketId)) {
     gameState.hostSocketId = preferredSocketId;
     return;
@@ -306,12 +331,13 @@ function getPlayerIndexBySocket(socketId) {
 }
 
 function bothOnlinePlayersReady() {
-  return gameState.players.every((player) => Boolean(player.socketId));
+  return getActivePlayers().every((player) => Boolean(player.socketId));
 }
 
 function buildPublicState() {
   return {
     mode: gameState.mode,
+    playerCount: gameState.playerCount,
     phase: gameState.phase,
     round: gameState.round,
     maxRounds: gameState.maxRounds,
@@ -337,7 +363,7 @@ function buildPublicState() {
     })),
     spectatorCount: countSpectators(),
     onlineReady: bothOnlinePlayersReady(),
-    onlineSlotsTaken: gameState.players.filter((player) => Boolean(player.socketId)).length
+    onlineSlotsTaken: getActivePlayers().filter((player) => Boolean(player.socketId)).length
   };
 }
 
@@ -345,7 +371,7 @@ function getSessionInfo(socketId) {
   const playerIndex = getPlayerIndexBySocket(socketId);
   const isHost = socketId === gameState.hostSocketId;
   const isLocalController = (gameState.mode === "local" || gameState.mode === "cpu") && isHost;
-  const roomFull = gameState.mode === "online" && bothOnlinePlayersReady() && playerIndex === -1;
+  const roomFull = gameState.mode === "online" && bothOnlinePlayersReady() && (playerIndex === -1 || playerIndex >= getActivePlayerCount());
 
   return {
     socketId,
@@ -387,7 +413,7 @@ function disconnectExtraOnlineSockets() {
   }
 
   const allowedSocketIds = new Set(
-    gameState.players
+    getActivePlayers()
       .map((player) => player.socketId)
       .filter(Boolean)
   );
@@ -473,7 +499,7 @@ function getRevealedRatio() {
 }
 
 function isHumanTurn() {
-  return !gameState.players[gameState.currentPlayer]?.isCPU;
+  return !getActivePlayers()[gameState.currentPlayer]?.isCPU;
 }
 
 function canControlTurn(socketId) {
@@ -483,7 +509,8 @@ function canControlTurn(socketId) {
   if (gameState.mode === "local" || gameState.mode === "cpu") {
     return socketId === gameState.hostSocketId;
   }
-  return getPlayerIndexBySocket(socketId) === gameState.currentPlayer;
+  const playerIndex = getPlayerIndexBySocket(socketId);
+  return playerIndex !== -1 && playerIndex < getActivePlayerCount() && playerIndex === gameState.currentPlayer;
 }
 
 function canOpenShop(socketId) {
@@ -528,7 +555,7 @@ function finishSolvedRound() {
 }
 
 function nextPlayer() {
-  gameState.currentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
+  gameState.currentPlayer = (gameState.currentPlayer + 1) % getActivePlayerCount();
   gameState.phase = "action";
   gameState.currentSpinValue = 0;
   syncAllClients();
@@ -699,6 +726,7 @@ function handleSolveAttempt(attempt) {
 
 function announceShopOpen(isFinale) {
   const scoreLine = gameState.players
+    .slice(0, getActivePlayerCount())
     .map((player) => `${player.name} steht bei ${player.score} Euro`)
     .join(". ");
   emitModerator("score_announce");
@@ -714,7 +742,8 @@ function openShopPhase() {
   clearScheduledTimers();
   const isFinale = gameState.round >= gameState.maxRounds;
   if (isFinale) {
-    gameState.winnerIndex = gameState.players.reduce((bestIndex, player, index, players) => {
+    const activePlayers = getActivePlayers();
+    gameState.winnerIndex = activePlayers.reduce((bestIndex, player, index, players) => {
       return player.score > players[bestIndex].score ? index : bestIndex;
     }, 0);
   }
@@ -761,7 +790,7 @@ function continueFromShop() {
 
   clearScheduledTimers();
   gameState.round += 1;
-  gameState.roundStarter = (gameState.roundStarter + 1) % gameState.players.length;
+  gameState.roundStarter = (gameState.roundStarter + 1) % getActivePlayerCount();
   gameState.currentPlayer = gameState.roundStarter;
   gameState.phase = "action";
   gameState.winnerIndex = null;
@@ -917,6 +946,13 @@ function startConfiguredGame(mode) {
   gameState.players.forEach((player, index) => {
     player.score = 0;
     player.prizes = [];
+    if (index >= getActivePlayerCount()) {
+      player.socketId = null;
+      player.connected = false;
+      player.isCPU = false;
+      player.name = `Spieler ${index + 1}`;
+      return;
+    }
     if (mode === "online") {
       player.isCPU = false;
       player.connected = Boolean(player.socketId);
@@ -954,7 +990,7 @@ app.get("/", (_req, res) => {
 
 io.on("connection", (socket) => {
   clearEmptyRoomResetTimer();
-  ensureHostAssignment(socket.id);
+  ensureHostAssignment();
   emitSessionInfo(socket);
   broadcastState();
   refreshSessions();
@@ -966,6 +1002,14 @@ io.on("connection", (socket) => {
     }
 
     socketClientKeys.set(socket.id, normalizedKey);
+
+    if ((gameState.mode === "local" || gameState.mode === "cpu") && hostClientKey && normalizedKey !== hostClientKey && !gameState.hostSocketId) {
+      clearScheduledTimers();
+      gameState = createInitialState();
+      hostClientKey = null;
+    }
+
+    ensureHostAssignment(socket.id);
 
     if ((gameState.mode === "local" || gameState.mode === "cpu") && hostClientKey === normalizedKey) {
       gameState.hostSocketId = socket.id;
@@ -984,6 +1028,7 @@ io.on("connection", (socket) => {
     }
 
     const mode = payload.mode === "cpu" ? "cpu" : "local";
+    gameState.playerCount = sanitizePlayerCount(payload.playerCount);
     gameState.mode = mode;
     gameState.players[0].name = sanitizeName(payload.player1Name, "Spieler 1");
     gameState.players[1].name = sanitizeName(
@@ -1001,8 +1046,8 @@ io.on("connection", (socket) => {
     gameState.players[1].connected = true;
     gameState.players[1].isCPU = mode === "cpu";
     gameState.players[2].socketId = null;
-    gameState.players[2].connected = true;
-    gameState.players[2].isCPU = mode === "cpu";
+    gameState.players[2].connected = gameState.playerCount === 3;
+    gameState.players[2].isCPU = mode === "cpu" && gameState.playerCount === 3;
     hostClientKey = getClientKeyBySocket(socket.id) || hostClientKey;
     startConfiguredGame(mode);
   });
@@ -1012,10 +1057,14 @@ io.on("connection", (socket) => {
       return;
     }
 
+    const requestedPlayerCount = sanitizePlayerCount(payload.playerCount);
+    if (gameState.phase === "setup" && gameState.mode !== "online") {
+      gameState.playerCount = requestedPlayerCount;
+    }
     gameState.mode = "online";
     let playerIndex = getPlayerIndexBySocket(socket.id);
     if (playerIndex === -1) {
-      playerIndex = gameState.players.findIndex((player) => !player.socketId);
+      playerIndex = getActivePlayers().findIndex((player) => !player.socketId);
     }
     if (playerIndex === -1) {
       emitSessionInfo(socket);
