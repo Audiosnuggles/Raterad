@@ -146,9 +146,17 @@
                 <div>
                     <label class="block text-sm font-bold text-pink-400 mb-2">Spielmodus</label>
                     <select id="mode-select" onchange="handleModeChange()" class="w-full px-4 py-3 rounded-xl bg-gray-800 border-2 border-gray-700 focus:border-pink-500 focus:outline-none text-white">
-                        <option value="local">Lokal: 3 Spieler an einem Gerät</option>
-                        <option value="cpu">Lokal: 1 Spieler gegen 2 CPU</option>
-                        <option value="online">Online: exakt 3 echte Spieler</option>
+                        <option value="local">Lokal am Gerät</option>
+                        <option value="cpu">Gegen CPU</option>
+                        <option value="online">Online</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-cyan-400 mb-2">Anzahl Spieler</label>
+                    <select id="player-count-select" onchange="handleModeChange()" class="w-full px-4 py-3 rounded-xl bg-gray-800 border-2 border-gray-700 focus:border-cyan-500 focus:outline-none text-white">
+                        <option value="2">2 Spieler</option>
+                        <option value="3">3 Spieler</option>
                     </select>
                 </div>
 
@@ -372,17 +380,7 @@
         const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ'.split('');
         let socket = null;
         let bootstrapError = '';
-        const clientKey = (() => {
-            try {
-                const stored = window.localStorage.getItem('raterad-client-key');
-                if (stored) return stored;
-                const created = `rr-${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`;
-                window.localStorage.setItem('raterad-client-key', created);
-                return created;
-            } catch (_error) {
-                return `rr-fallback-${Date.now().toString(36)}`;
-            }
-        })();
+        const clientKey = `rr-${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`;
 
         let gameState = null;
         let session = {
@@ -768,16 +766,27 @@
         }
 
         function modeLabel(mode) {
-            if (mode === 'cpu') return 'Solo vs 2 CPU';
+            if (mode === 'cpu') return getActivePlayerCount() === 3 ? 'Solo vs 2 CPU' : 'Solo vs CPU';
             if (mode === 'online') return 'Online';
             return 'Lokal';
+        }
+
+        function getConfiguredPlayerCount() {
+            const value = Number(document.getElementById('player-count-select')?.value || 2);
+            return value === 3 ? 3 : 2;
+        }
+
+        function getActivePlayerCount() {
+            const serverCount = Number(gameState?.playerCount || 0);
+            if (serverCount === 2 || serverCount === 3) return serverCount;
+            return getConfiguredPlayerCount();
         }
 
         function roleLabel() {
             if (session.canControlAll) return 'Regie';
             if (session.slotIndex === 0) return 'Spieler 1';
             if (session.slotIndex === 1) return 'Spieler 2';
-            if (session.slotIndex === 2) return 'Spieler 3';
+            if (session.slotIndex === 2 && getActivePlayerCount() === 3) return 'Spieler 3';
             if (session.roomFull) return 'Raum voll';
             return 'Nicht beigetreten';
         }
@@ -839,8 +848,10 @@
 
         function handleModeChange() {
             const mode = document.getElementById('mode-select').value;
+            const playerCount = getConfiguredPlayerCount();
             const isOnline = mode === 'online';
             const isCpu = mode === 'cpu';
+            const usesThirdPlayer = playerCount === 3;
 
             document.getElementById('p1-label').innerText = isOnline ? 'Dein Name' : 'Name Spieler 1';
             document.getElementById('p2-label').innerText = isCpu ? 'Name CPU Gegner' : 'Name Spieler 2';
@@ -848,10 +859,11 @@
             document.getElementById('p3-label').innerText = isCpu ? 'Name CPU Gegner 2' : 'Name Spieler 3';
             document.getElementById('p3-input').placeholder = isCpu ? 'CPU Brigitte Bot' : 'Spieler 3';
             document.getElementById('p2-wrapper').classList.toggle('hidden', isOnline);
-            document.getElementById('p3-wrapper').classList.toggle('hidden', isOnline);
+            document.getElementById('p3-wrapper').classList.toggle('hidden', isOnline || !usesThirdPlayer);
             document.getElementById('online-slots').classList.toggle('hidden', !isOnline);
             document.getElementById('local-actions').classList.toggle('hidden', isOnline);
             document.getElementById('online-actions').classList.toggle('hidden', !isOnline);
+            document.getElementById('slot-player-3')?.parentElement.classList.toggle('hidden', !usesThirdPlayer);
         }
 
         function startConfiguredGame() {
@@ -859,6 +871,7 @@
             const mode = document.getElementById('mode-select').value;
             emitToServer('configure_local_game', {
                 mode,
+                playerCount: getConfiguredPlayerCount(),
                 player1Name: document.getElementById('p1-input').value,
                 player2Name: document.getElementById('p2-input').value,
                 player3Name: document.getElementById('p3-input').value
@@ -868,7 +881,8 @@
         function joinOnlineGame() {
             ensureMusicStarted();
             emitToServer('join_online', {
-                name: document.getElementById('p1-input').value
+                name: document.getElementById('p1-input').value,
+                playerCount: getConfiguredPlayerCount()
             });
         }
 
@@ -1054,14 +1068,19 @@
                 { border: 'border-red-400/70', text: 'text-red-300', badge: 'bg-red-500/20 text-red-200', activeBg: 'bg-red-600/50', activeShadow: 'shadow-[0_0_20px_rgba(239,68,68,0.6)]' },
                 { border: 'border-emerald-400/70', text: 'text-emerald-300', badge: 'bg-emerald-500/20 text-emerald-200', activeBg: 'bg-emerald-600/50', activeShadow: 'shadow-[0_0_20px_rgba(16,185,129,0.55)]' }
             ];
+            const activePlayerCount = getActivePlayerCount();
 
             gameState.players.forEach((player, index) => {
+                const card = document.getElementById(`p${index + 1}-card`);
+                if (!card) return;
+                if (index >= activePlayerCount) {
+                    card.className = 'hidden';
+                    return;
+                }
                 const accent = accentMap[index] || accentMap[0];
                 document.getElementById(`p${index + 1}-name`).innerText = player.name;
                 document.getElementById(`p${index + 1}-score`).innerText = `${player.score} €`;
                 document.getElementById(`p${index + 1}-badge`).innerText = player.isCPU ? 'CPU' : (player.connected ? 'LIVE' : 'WEG');
-
-                const card = document.getElementById(`p${index + 1}-card`);
                 const isActive = gameState.currentPlayer === index;
                 card.className = [
                     'game-panel border-2 rounded-[22px] p-4 w-full max-w-[260px] text-center transition-all duration-300',
@@ -1129,18 +1148,22 @@
 
         function renderSetup() {
             const select = document.getElementById('mode-select');
+            const playerCountSelect = document.getElementById('player-count-select');
+            const activePlayerCount = getActivePlayerCount();
             const onlineClaimed = gameState.mode === 'online' && gameState.players.some((player) => player.connected || player.name !== `Spieler ${player.slot + 1}`);
             if (gameState.mode) {
                 select.value = gameState.mode;
             }
+            playerCountSelect.value = String(activePlayerCount);
             select.disabled = Boolean(gameState.mode === 'online' && onlineClaimed);
+            playerCountSelect.disabled = Boolean(gameState.mode === 'online' && onlineClaimed);
 
             document.getElementById('slot-player-1').innerText = gameState.players[0].connected ? gameState.players[0].name : 'Frei';
             document.getElementById('slot-player-2').innerText = gameState.players[1].connected ? gameState.players[1].name : 'Frei';
             document.getElementById('slot-player-3').innerText = gameState.players[2].connected ? gameState.players[2].name : 'Frei';
-            document.getElementById('online-room-info').innerText = gameState.onlineSlotsTaken >= 3
+            document.getElementById('online-room-info').innerText = gameState.onlineSlotsTaken >= activePlayerCount
                 ? 'Raum voll. Keine Zuschauerplaetze.'
-                : `Noch ${3 - gameState.onlineSlotsTaken} Slot(s) frei.`;
+                : `Noch ${activePlayerCount - gameState.onlineSlotsTaken} Slot(s) frei.`;
             document.getElementById('session-role').innerText = `DEINE ROLLE: ${roleLabel()}`;
             updateBootstrapError();
 
@@ -1149,16 +1172,20 @@
                 if (session.roomFull) {
                     statusText = 'Der Online-Raum ist bereits voll. Dieses Spiel erlaubt bewusst keine Zuschauer.';
                 } else if (gameState.onlineReady && session.slotIndex === 0) {
-                    statusText = 'Alle drei Online-Spieler stehen bereit. Spieler 1 darf die Show jetzt starten.';
+                    statusText = `${activePlayerCount} Online-Spieler stehen bereit. Spieler 1 darf die Show jetzt starten.`;
                 } else if (gameState.onlineReady) {
                     statusText = 'Die Besetzung ist komplett. Jetzt wartet alles auf den Startknopf von Spieler 1.';
                 } else {
-                    statusText = 'Online-Lobby offen: genau drei Spieler, keine Zuschauer.';
+                    statusText = `Online-Lobby offen: genau ${activePlayerCount} Spieler, keine Zuschauer.`;
                 }
             } else if (gameState.mode === 'cpu') {
-                statusText = 'Solo gegen CPU: Du steuerst lokal die menschliche Seite, der Server übernimmt zwei bissige Bots.';
+                statusText = activePlayerCount === 3
+                    ? 'Solo gegen CPU: Du steuerst lokal die menschliche Seite, der Server übernimmt zwei bissige Bots.'
+                    : 'Solo gegen CPU: Du gegen einen Bot, direkt an einem Gerät.';
             } else if (gameState.mode === 'local') {
-                statusText = 'Lokal zu dritt: ein Gerät, drei Kandidaten, maximaler Trash-TV-Schaden.';
+                statusText = activePlayerCount === 3
+                    ? 'Lokal zu dritt: ein Gerät, drei Kandidaten, maximaler Trash-TV-Schaden.'
+                    : 'Lokal zu zweit: ein Gerät, zwei Kandidaten, maximaler Trash-TV-Schaden.';
             }
             document.getElementById('setup-status').innerText = statusText;
 
@@ -1174,7 +1201,7 @@
             document.getElementById('mode-display').innerText = modeLabel(gameState.mode);
             document.getElementById('role-display').innerText = roleLabel();
             document.getElementById('solve-bonus-display').innerText = gameState.solveBonus ?? 1000;
-            document.getElementById('live-spectators').innerText = gameState.mode === 'online' ? Math.max(0, 3 - gameState.onlineSlotsTaken) : 0;
+            document.getElementById('live-spectators').innerText = gameState.mode === 'online' ? Math.max(0, getActivePlayerCount() - gameState.onlineSlotsTaken) : 0;
 
             buildWheel();
             renderPlayerCards();
